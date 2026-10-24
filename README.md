@@ -27,8 +27,7 @@ Additionally, the platform generates 1-click official A4 printable academic leav
   - **[IIUC Kumira Transport Schedule](https://www.iiuc.ac.bd/):** Authentic 16-route Chittagong City ⇄ Kumira Campus bus timetables, counter boarding gates, and stop timelines.
   - **Sample CSE Academic Materials:** Verified handwritten lecture note datasets (CSE-3501 Database Normalization, Algorithms, Software Engineering).
 
-## Architecture
-![System Architecture](docs/architecture.png)
+## Architecture diagram
 
 ```mermaid
 graph TD
