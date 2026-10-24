@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Header } from './components/Header';
 import { Navigation } from './components/Navigation';
+import { HeroBanner } from './components/HeroBanner';
 import { EmergencySosModal } from './components/EmergencySosModal';
 import { StudyHubTab } from './components/tabs/StudyHubTab';
 import { BusNavigatorTab } from './components/tabs/BusNavigatorTab';
@@ -35,6 +36,14 @@ export default function App() {
 
       {/* Main Container */}
       <main className="flex-1 max-w-6xl w-full mx-auto p-3 sm:p-6">
+        {/* Upscale-inspired Hero Banner */}
+        <HeroBanner
+          language={language}
+          onNavigateTab={setActiveTab}
+          onOpenSos={() => setIsSosModalOpen(true)}
+        />
+
+        {/* Tab Modules */}
         <div style={{ display: activeTab === 'study' ? 'block' : 'none' }}>
           <StudyHubTab language={language} />
         </div>
