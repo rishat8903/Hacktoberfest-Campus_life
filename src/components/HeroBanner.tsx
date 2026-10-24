@@ -133,10 +133,10 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
               <FileCheck className="w-5 h-5" />
             </div>
             <div className="font-bold text-xs sm:text-sm text-white">
-              {isBn ? 'ছুটির দরখাস্ত প্রিন্ট' : 'Leave Letter Gen'}
+              {isBn ? 'ল্যাব কভার ও দরখাস্ত' : 'Lab Cover & Leave Gen'}
             </div>
             <div className="text-[10px] text-slate-400 mt-0.5">
-              {isBn ? 'ডিন/চেয়ারম্যানের ফরম' : 'A4 PDF Ready'}
+              {isBn ? 'অফিসিয়াল A4 কভার পেজ' : 'A4 Cover & Letter Ready'}
             </div>
           </button>
 

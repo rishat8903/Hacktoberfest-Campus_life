@@ -124,3 +124,33 @@ export interface MentalHealthMessage {
   timestamp: string;
 }
 
+// --- Assignment & Lab Report Cover Page Types ---
+export type CoverPageType = 'assignment' | 'lab_report' | 'project_report';
+
+export interface CoverPageData {
+  coverType: CoverPageType;
+  universityName: string;
+  campusName: string;
+  department: string;
+  courseCode: string;
+  courseTitle: string;
+  itemNumber: string;
+  titleOrTopic: string;
+  // Student Details
+  studentName: string;
+  studentId: string;
+  batchAndSection: string;
+  semester: string;
+  groupOrPartner?: string;
+  // Faculty Details
+  teacherName: string;
+  teacherDesignation: string;
+  teacherDepartment: string;
+  // Dates
+  submissionDate: string;
+  experimentDate?: string;
+  // Style / Template
+  borderStyle: 'formal_double' | 'minimal_modern' | 'academic_box';
+  includeGradingBox: boolean;
+}
+
