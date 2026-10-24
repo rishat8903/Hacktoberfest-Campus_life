@@ -29,10 +29,10 @@ export const SAMPLE_CSE_STUDY_NOTE: StudyNoteResult = {
     },
     {
       id: 'q3',
-      question: 'একটি টেবিলে ফোন নম্বরের ঘরে একাধিক নম্বর একসাথে কমা দিয়ে রাখা হলে তা কোন নিয়মের লঙ্ঘন?',
-      options: ['1NF (নন-অ্যাটমিক ভ্যালু)', '2NF (আংশিক নির্ভরতা)', '3NF (ট্রানজিটিভ নির্ভরতা)', 'রেফারেন্সিয়াল ইন্টিগ্রিটি'],
+      question: 'In a student table, storing multiple phone numbers comma-separated in a single attribute violates which normal form?',
+      options: ['1st Normal Form (1NF - Requires Atomic Values)', '2nd Normal Form (2NF - Partial Dependency)', '3rd Normal Form (3NF - Transitive Dependency)', 'Boyce-Codd NF (BCNF)'],
       correctAnswerIndex: 0,
-      explanation: '1NF এর প্রধান শর্ত হলো প্রতিটি অ্যাট্রিবিউটে শুধুমাত্র একক বা অ্যাটমিক (Atomic) মান থাকতে হবে। কমা দিয়ে একাধিক মান রাখা 1NF লঙ্ঘন করে।',
+      explanation: '1NF strictly requires that every column contains atomic (single, indivisible) values. Storing multiple comma-separated values in a single cell directly violates 1NF.',
     },
   ],
 };

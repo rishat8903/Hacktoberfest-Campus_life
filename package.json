@@ -5,7 +5,7 @@
   "type": "module",
   "description": "IIUC CampusMate (ক্যাম্পাস-সাথী) — AI Daily Campus Life & Study Copilot for University Students powered by Gemma & ElevenLabs",
   "scripts": {
-    "dev": "tsx server.ts",
+    "dev": "tsx watch server.ts",
     "build": "vite build",
     "start": "NODE_ENV=production tsx server.ts",
     "preview": "vite preview"

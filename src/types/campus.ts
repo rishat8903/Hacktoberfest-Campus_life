@@ -2,6 +2,25 @@ export type ActiveTab = 'study' | 'bus' | 'notices' | 'wellbeing';
 
 export type Language = 'bn' | 'en';
 
+export type VoiceGender = 'female' | 'male';
+export type SpeechLang = 'en' | 'bn';
+
+export interface VoiceOption {
+  id: string;
+  name: string;
+  gender: VoiceGender;
+  style: string;
+}
+
+export interface VoiceConfig {
+  voiceId: string;
+  name: string;
+  gender: VoiceGender;
+  speechLang: SpeechLang;
+  speed: number;
+  customVoiceId?: string;
+}
+
 // --- Study Hub Types ---
 export interface QuizQuestion {
   id: string;

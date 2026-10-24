@@ -37,7 +37,7 @@ const SAMPLE_NOTICES: CampusNotice[] = [
   },
   {
     id: 'notice-waiver',
-    title: 'Tuition Fee Waiver & Scholarship Application for Autumn 2026',
+    title: 'Tuition Fee Waiver & Merit Scholarship Applications for Autumn 2026',
     titleBn: 'টিউশন ফি ওয়েভার ও মেধা বৃত্তি আবেদন বিজ্ঞপ্তি (শরৎ ২০২৬)',
     category: 'fees',
     issuingOffice: 'Student Welfare & Scholarship Division',
@@ -51,7 +51,7 @@ const SAMPLE_NOTICES: CampusNotice[] = [
   },
   {
     id: 'notice-hall-rules',
-    title: 'Dormitory Dining Schedule & Gate Timing Notice',
+    title: 'Dormitory Dining Schedule & Main Gate Timing Notice',
     titleBn: 'আবাসিক হল ডাইনিং মিল ও প্রধান ফটক বন্ধের সময়সূচী',
     category: 'general',
     issuingOffice: 'Hall Provost Council (Usman & Ali Halls)',
@@ -70,17 +70,17 @@ export const NoticesFormsTab: React.FC<NoticesFormsTabProps> = ({ language }) =>
 
   // Academic Leave Letter Generator Form State
   const [formData, setFormData] = useState<LeaveApplicationData>({
-    studentName: 'মো: তানভীর আহমেদ (Tanvir Ahmed)',
+    studentName: 'Tanvir Ahmed',
     studentId: 'C221045',
     department: 'Computer Science & Engineering (CSE)',
     batchAndSection: 'CSE 53rd Batch, Section B',
     semester: 'Autumn 2026 (5th Semester)',
     contactPhone: '01812-345678',
     reasonType: 'sick_leave',
-    missedExamsOrClasses: 'CSE-3501 (DBMS Midterm) and CSE-3503 Lab',
+    missedExamsOrClasses: 'CSE-3501 (DBMS Midterm Exam) & CSE-3503 Database Lab',
     startDate: '2026-10-22',
     endDate: '2026-10-26',
-    reasonDetails: 'তীব্র ডেঙ্গু জ্বর এবং প্লাটিলেট কমে যাওয়ার কারণে চিকিৎসকের পরামর্শে ৫ দিন পূর্ণ বিশ্রামে ছিলাম।',
+    reasonDetails: 'Diagnosed with severe viral fever and advised by the attending physician to observe 5 days complete bed rest.',
     medicalSlipAttached: true,
     doctorOrClinicName: 'Dr. Rafiqul Islam, MBBS (Kumira Health Complex)',
   });
@@ -95,7 +95,7 @@ export const NoticesFormsTab: React.FC<NoticesFormsTabProps> = ({ language }) =>
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Top Selector: Notice Board vs 1-Click Leave Application Generator */}
-      <div className="bg-white/85 backdrop-blur-xl p-3 sm:p-4 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3 no-print">
+      <div className="bg-white/90 backdrop-blur-xl p-3 sm:p-4 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3 no-print">
         <div className="flex bg-slate-200/70 p-1 rounded-2xl w-full sm:w-auto border border-slate-300/50">
           <button
             onClick={() => setActiveSubView('leave_generator')}
@@ -106,7 +106,7 @@ export const NoticesFormsTab: React.FC<NoticesFormsTabProps> = ({ language }) =>
             }`}
           >
             <Printer className="w-3.5 h-3.5" />
-            <span>{isBn ? 'ছুটির দরখাস্ত জেনারেটর (A4 Print)' : 'Leave Application Generator'}</span>
+            <span>Leave Application Generator (A4 Print)</span>
           </button>
 
           <button
@@ -118,7 +118,7 @@ export const NoticesFormsTab: React.FC<NoticesFormsTabProps> = ({ language }) =>
             }`}
           >
             <FileText className="w-3.5 h-3.5" />
-            <span>{isBn ? 'ক্যাম্পাস নোটিশ বোর্ড' : 'Campus Notices Board'}</span>
+            <span>Campus Notice Decoder</span>
           </button>
         </div>
 
@@ -128,7 +128,7 @@ export const NoticesFormsTab: React.FC<NoticesFormsTabProps> = ({ language }) =>
             className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs sm:text-sm font-bold shadow-md transition active:scale-95 cursor-pointer"
           >
             <Printer className="w-4 h-4 text-amber-300" />
-            <span>{isBn ? 'দরখাস্ত প্রিন্ট / PDF সংরক্ষণ' : 'Print Application (PDF)'}</span>
+            <span>Print Official Letter (PDF)</span>
           </button>
         )}
       </div>
@@ -140,79 +140,113 @@ export const NoticesFormsTab: React.FC<NoticesFormsTabProps> = ({ language }) =>
           <div className="lg:col-span-5 bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs space-y-4 no-print">
             <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
               <Edit3 className="w-4 h-4 text-blue-600" />
-              <h3 className="font-bold text-slate-900 text-sm">
-                {isBn ? 'শিক্ষার্থীর তথ্য ও ছুটির বিবরণ' : 'Application Parameters'}
+              <h3 className="font-bold text-slate-900 text-sm font-display">
+                Student & Leave Details
               </h3>
             </div>
 
             <div className="space-y-3 text-xs">
               <div>
                 <label className="font-semibold text-slate-700 block mb-1">
-                  {isBn ? 'শিক্ষার্থীর পূর্ণ নাম' : 'Student Full Name'}
+                  Student Full Name
                 </label>
                 <input
                   type="text"
                   value={formData.studentName}
                   onChange={(e) => setFormData({ ...formData, studentName: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="font-semibold text-slate-700 block mb-1">
-                    {isBn ? 'আইডি (Student ID)' : 'Student ID'}
+                    Student ID
                   </label>
                   <input
                     type="text"
                     value={formData.studentId}
                     onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
                   />
                 </div>
 
                 <div>
                   <label className="font-semibold text-slate-700 block mb-1">
-                    {isBn ? 'মোবাইল নম্বর' : 'Phone Number'}
+                    Phone Number
                   </label>
                   <input
                     type="text"
                     value={formData.contactPhone}
                     onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
                   />
                 </div>
               </div>
 
               <div>
                 <label className="font-semibold text-slate-700 block mb-1">
-                  {isBn ? 'বিভাগ (Department)' : 'Department'}
+                  Department & Faculty
                 </label>
                 <input
                   type="text"
                   value={formData.department}
                   onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="font-semibold text-slate-700 block mb-1">
-                  {isBn ? 'অনুপস্থিত ক্লাস / পরীক্ষার কোড' : 'Missed Exam / Course Codes'}
-                </label>
-                <input
-                  type="text"
-                  value={formData.missedExamsOrClasses}
-                  onChange={(e) => setFormData({ ...formData, missedExamsOrClasses: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g. CSE-3501 DBMS Midterm"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="font-semibold text-slate-700 block mb-1">
-                    {isBn ? 'শুরুর তারিখ' : 'Start Date'}
+                    Batch & Section
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.batchAndSection}
+                    onChange={(e) => setFormData({ ...formData, batchAndSection: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-semibold text-slate-700 block mb-1">
+                    Academic Semester
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.semester}
+                    onChange={(e) => setFormData({ ...formData, semester: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">
+                  Type of Application
+                </label>
+                <select
+                  value={formData.reasonType}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      reasonType: e.target.value as LeaveApplicationData['reasonType'],
+                    })
+                  }
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
+                >
+                  <option value="sick_leave">Medical Sick Leave (Dormitory/Hospital)</option>
+                  <option value="exam_exemption">Missed Examination Exemption & Re-test</option>
+                  <option value="transport_disruption">Kumira Highway Bus / Transit Disruption</option>
+                  <option value="family_emergency">Urgent Family Emergency Leave</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="font-semibold text-slate-700 block mb-1">
+                    Leave From Date
                   </label>
                   <input
                     type="date"
@@ -224,7 +258,7 @@ export const NoticesFormsTab: React.FC<NoticesFormsTabProps> = ({ language }) =>
 
                 <div>
                   <label className="font-semibold text-slate-700 block mb-1">
-                    {isBn ? 'শেষের তারিখ' : 'End Date'}
+                    Leave To Date
                   </label>
                   <input
                     type="date"
@@ -237,143 +271,225 @@ export const NoticesFormsTab: React.FC<NoticesFormsTabProps> = ({ language }) =>
 
               <div>
                 <label className="font-semibold text-slate-700 block mb-1">
-                  {isBn ? 'অসুস্থতা বা কারণের বিবরণ' : 'Medical Reason Details'}
+                  Missed Classes, Labs or Exam Codes
                 </label>
-                <textarea
-                  rows={3}
-                  value={formData.reasonDetails}
-                  onChange={(e) => setFormData({ ...formData, reasonDetails: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                <input
+                  type="text"
+                  value={formData.missedExamsOrClasses}
+                  onChange={(e) =>
+                    setFormData({ ...formData, missedExamsOrClasses: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
                 />
               </div>
 
               <div>
                 <label className="font-semibold text-slate-700 block mb-1">
-                  {isBn ? 'চিকিৎসক বা ক্লিনিকের নাম' : 'Attending Doctor / Clinic'}
+                  Medical Diagnosis & Reason Details
                 </label>
-                <input
-                  type="text"
-                  value={formData.doctorOrClinicName || ''}
-                  onChange={(e) => setFormData({ ...formData, doctorOrClinicName: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g. Kumira Medical Center"
+                <textarea
+                  rows={3}
+                  value={formData.reasonDetails}
+                  onChange={(e) => setFormData({ ...formData, reasonDetails: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
                 />
               </div>
+
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  type="checkbox"
+                  id="medSlip"
+                  checked={formData.medicalSlipAttached}
+                  onChange={(e) =>
+                    setFormData({ ...formData, medicalSlipAttached: e.target.checked })
+                  }
+                  className="w-4 h-4 text-blue-600 rounded cursor-pointer"
+                />
+                <label htmlFor="medSlip" className="font-semibold text-slate-800 cursor-pointer">
+                  Attaching Registered Physician Prescription / Hospital Slip
+                </label>
+              </div>
+
+              {formData.medicalSlipAttached && (
+                <div>
+                  <input
+                    type="text"
+                    placeholder="Doctor Name & Medical Center"
+                    value={formData.doctorOrClinicName || ''}
+                    onChange={(e) =>
+                      setFormData({ ...formData, doctorOrClinicName: e.target.value })
+                    }
+                    className="w-full px-3 py-1.5 border border-slate-300 rounded-xl bg-slate-50 text-xs"
+                  />
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Official A4 Application Preview (Print layout) */}
-          <div className="lg:col-span-7 bg-white p-6 sm:p-10 rounded-3xl border-2 border-slate-300 shadow-md text-slate-900 page-break-avoid print:border-none print:shadow-none print:p-0">
-            {/* Letter Header */}
-            <div className="border-b-2 border-slate-800 pb-4 mb-6 text-center">
-              <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-slate-900">
-                International Islamic University Chittagong
-              </h2>
-              <p className="text-xs text-slate-600 font-semibold mt-0.5">
-                Kumira, Sitakunda, Chittagong-4318, Bangladesh
-              </p>
-              <div className="inline-block mt-3 px-3 py-1 bg-slate-100 border border-slate-300 text-xs font-bold uppercase tracking-wider rounded-md">
-                Application for Medical Leave / Exam Exemption
-              </div>
-            </div>
-
-            {/* Formal Date & Addressee */}
-            <div className="space-y-1 text-xs sm:text-sm text-slate-800 mb-6 leading-relaxed">
-              <div><strong>Date:</strong> {new Date().toLocaleDateString('en-GB')}</div>
-              <div className="pt-2"><strong>To,</strong></div>
-              <div>The Chairman / Head of the Department,</div>
-              <div>Department of {formData.department},</div>
-              <div>International Islamic University Chittagong (IIUC).</div>
-            </div>
-
-            {/* Subject */}
-            <div className="text-xs sm:text-sm font-bold text-slate-950 mb-4 bg-slate-100 p-2.5 rounded-lg border border-slate-200">
-              Subject: Application for leave of absence / exam exemption on medical grounds.
-            </div>
-
-            {/* Letter Body */}
-            <div className="text-xs sm:text-sm text-slate-800 space-y-3 leading-relaxed mb-8">
-              <p>Respected Sir,</p>
-              <p>
-                With due respect and humble submission, I am <strong>{formData.studentName}</strong>, a regular student of the Department of {formData.department}, bearing Student ID: <strong>{formData.studentId}</strong>.
-              </p>
-              <p>
-                I am writing to inform you that I have been unable to attend scheduled classes/examinations (including <strong>{formData.missedExamsOrClasses}</strong>) from <strong>{formData.startDate}</strong> to <strong>{formData.endDate}</strong> due to {formData.reasonDetails}.
-              </p>
-              <p>
-                Under the advice of <strong>{formData.doctorOrClinicName || 'the registered physician'}</strong>, I was placed on mandatory rest. The official medical prescription and diagnostic test copies are attached herewith for your kind perusal.
-              </p>
-              <p>
-                I, therefore, pray and hope that your honor would be kind enough to grant me medical leave for the aforementioned period and permit necessary makeup examinations as per university academic regulations.
-              </p>
-            </div>
-
-            {/* Sign-off & Signatures Grid */}
-            <div className="pt-8 border-t border-slate-300 grid grid-cols-2 gap-8 text-xs text-center">
-              <div>
-                <div className="h-12 border-b border-dashed border-slate-400 mb-2"></div>
-                <div className="font-bold text-slate-900">{formData.studentName}</div>
-                <div className="text-slate-500 text-[11px]">Student ID: {formData.studentId}</div>
-                <div className="text-slate-500 text-[11px]">{formData.contactPhone}</div>
+          {/* Right Column: Live Printable Official A4 Document */}
+          <div className="lg:col-span-7">
+            <div className="bg-white p-8 sm:p-12 rounded-3xl border border-slate-300 shadow-md printable-page text-slate-900 font-serif leading-relaxed text-sm">
+              {/* IIUC Official Header */}
+              <div className="text-center border-b-2 border-slate-900 pb-5 mb-6">
+                <h2 className="text-xl sm:text-2xl font-bold tracking-wide uppercase font-display text-slate-900">
+                  International Islamic University Chittagong
+                </h2>
+                <p className="text-xs font-semibold text-slate-600 mt-0.5">
+                  Kumira, Sitakunda, Chattogram-4318, Bangladesh
+                </p>
+                <p className="text-xs font-medium text-slate-500">
+                  Department of {formData.department || 'Computer Science & Engineering'}
+                </p>
+                <div className="inline-block mt-3 px-3 py-1 bg-slate-100 border border-slate-400 text-xs font-bold tracking-widest uppercase">
+                  Official Academic Application
+                </div>
               </div>
 
-              <div>
-                <div className="h-12 border-b border-dashed border-slate-400 mb-2"></div>
-                <div className="font-bold text-slate-900">Chairman / Course Coordinator</div>
-                <div className="text-slate-500 text-[11px]">Department of {formData.department}</div>
-                <div className="text-slate-400 text-[10px]">Recommended / Approved</div>
+              {/* Letter Meta */}
+              <div className="flex justify-between items-center text-xs text-slate-600 mb-6">
+                <div>
+                  <strong>Date:</strong> {new Date().toLocaleDateString('en-GB')}
+                </div>
+                <div>
+                  <strong>Student ID:</strong> {formData.studentId}
+                </div>
+              </div>
+
+              {/* Letter Recipient */}
+              <div className="text-xs text-slate-800 mb-5 leading-relaxed font-sans">
+                <p className="font-bold">To,</p>
+                <p className="font-bold">The Chairman / Head of the Department,</p>
+                <p>Department of {formData.department},</p>
+                <p>International Islamic University Chittagong (IIUC),</p>
+                <p>Kumira, Chattogram.</p>
+              </div>
+
+              {/* Subject */}
+              <div className="mb-5 text-xs font-bold text-slate-900 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                Subject:{' '}
+                {formData.reasonType === 'sick_leave'
+                  ? 'Application for Grant of Medical Sick Leave & Attendance Waiver'
+                  : formData.reasonType === 'exam_exemption'
+                  ? 'Application for Exemption & Special Examination Arrangement'
+                  : formData.reasonType === 'transport_disruption'
+                  ? 'Application Regarding Attendance Disruption Due to Kumira Transit Halt'
+                  : 'Application for Urgent Academic Leave of Absence'}
+              </div>
+
+              {/* Body */}
+              <div className="space-y-3 text-xs leading-relaxed text-slate-800 font-sans">
+                <p>Respected Sir,</p>
+                <p>
+                  Most respectfully, I beg to state that I am an enrolled student of the{' '}
+                  <strong>{formData.batchAndSection}</strong>, currently studying in the{' '}
+                  <strong>{formData.semester}</strong>, bearing Student ID{' '}
+                  <strong>{formData.studentId}</strong>.
+                </p>
+
+                <p>
+                  I am writing to formally request leave of absence from{' '}
+                  <strong>{formData.startDate}</strong> to <strong>{formData.endDate}</strong> due to the
+                  following circumstance:
+                </p>
+
+                <blockquote className="p-3 bg-slate-50 rounded-lg border-l-4 border-blue-600 text-xs italic text-slate-700 my-2">
+                  "{formData.reasonDetails}"
+                </blockquote>
+
+                <p>
+                  Due to this unforeseen condition, I was regrettably unable to attend the scheduled
+                  classes/examinations for: <strong>{formData.missedExamsOrClasses}</strong>.
+                </p>
+
+                {formData.medicalSlipAttached && (
+                  <p className="text-[11px] text-slate-600">
+                    * Attached herewith is the verified medical certificate and prescription issued by{' '}
+                    <strong>{formData.doctorOrClinicName || 'attending registered physician'}</strong>.
+                  </p>
+                )}
+
+                <p>
+                  I therefore earnestly pray and hope that you will be kind enough to grant my leave of
+                  absence for the aforementioned dates and kindly direct the respected course instructors to
+                  allow attendance exemption and makeup assessments.
+                </p>
+              </div>
+
+              {/* Signatures Row */}
+              <div className="mt-12 pt-6 border-t border-slate-300 grid grid-cols-3 gap-4 text-center text-[10px] text-slate-600 font-sans">
+                <div>
+                  <div className="h-10 border-b border-dashed border-slate-400 mb-1 flex items-end justify-center font-cursive text-slate-900 text-xs">
+                    {formData.studentName}
+                  </div>
+                  <div className="font-bold text-slate-900">{formData.studentName}</div>
+                  <div>Applicant Student</div>
+                  <div>Ph: {formData.contactPhone}</div>
+                </div>
+
+                <div>
+                  <div className="h-10 border-b border-dashed border-slate-400 mb-1"></div>
+                  <div className="font-bold text-slate-800">Batch Advisor</div>
+                  <div>Signature & Date</div>
+                </div>
+
+                <div>
+                  <div className="h-10 border-b border-dashed border-slate-400 mb-1"></div>
+                  <div className="font-bold text-slate-800">Chairman / Head of Dept</div>
+                  <div>Official Seal & Approval</div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* VIEW 2: Notice Board Feed & Deadlines */}
+      {/* VIEW 2: Decoded Campus Notices Board */}
       {activeSubView === 'notices' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between text-xs text-slate-600 px-1 font-semibold">
-            <span>{isBn ? 'ক্যাম্পাসের সাম্প্রতিক নোটিশসমূহ' : 'Recent Campus Circulars'}</span>
-            <span>{SAMPLE_NOTICES.length} {isBn ? 'টি নোটিশ' : 'notices'}</span>
+          <div className="flex items-center justify-between">
+            <h3 className="font-bold text-slate-900 text-base font-display">
+              Official University Notice Circulars
+            </h3>
+            <span className="text-xs text-slate-500 font-medium">
+              Verified by IIUC Campus Communications
+            </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {SAMPLE_NOTICES.map((notice) => (
               <div
                 key={notice.id}
-                className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs space-y-3"
+                className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-xs flex flex-col justify-between space-y-3"
               >
-                <div className="flex items-start justify-between gap-2">
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-100 text-blue-800">
-                    {notice.category.toUpperCase()}
-                  </span>
-                  <span className="text-[11px] text-slate-400 flex items-center gap-1">
-                    <Calendar className="w-3 h-3" />
-                    <span>{notice.publishDate}</span>
-                  </span>
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 uppercase tracking-wider">
+                      {notice.category}
+                    </span>
+                    <span className="text-[11px] text-slate-400">{notice.publishDate}</span>
+                  </div>
+
+                  <h4 className="font-bold text-slate-900 text-sm leading-snug font-display">
+                    {notice.title}
+                  </h4>
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    {notice.issuingOffice}
+                  </p>
+
+                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-700 mt-3 leading-relaxed">
+                    {notice.summaryEn}
+                  </div>
                 </div>
 
-                <h4 className="font-bold text-slate-900 text-sm sm:text-base leading-snug">
-                  {isBn ? notice.titleBn : notice.title}
-                </h4>
-
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  {isBn ? notice.summaryBn : notice.summaryEn}
-                </p>
-
-                <div className="pt-2 border-t border-slate-100 space-y-2 text-xs">
-                  <div className="flex items-center gap-1.5 text-slate-700">
-                    <Building2 className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                    <span><strong>অফিস:</strong> {isBn ? notice.issuingOfficeBn : notice.issuingOffice}</span>
+                <div className="space-y-2 pt-2 border-t border-slate-100 text-[11px]">
+                  <div className="flex items-center gap-1.5 text-rose-700 font-semibold">
+                    <Clock className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                    <span>Deadlines: {notice.deadlines.join(' | ')}</span>
                   </div>
 
-                  <div className="flex items-center gap-1.5 text-slate-700">
+                  <div className="flex items-center gap-1.5 text-slate-600">
                     <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                    <span><strong>কক্ষ:</strong> {notice.destinationRoom}</span>
-                  </div>
-
-                  <div className="p-2 bg-rose-50 rounded-xl border border-rose-200 text-rose-900 text-[11px] font-semibold">
-                    <Clock className="w-3.5 h-3.5 inline mr-1 text-rose-600" />
-                    <span>শেষ সময়: {notice.deadlines.join(' | ')}</span>
+                    <span>{notice.destinationRoom}</span>
                   </div>
                 </div>
               </div>

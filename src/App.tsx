@@ -3,16 +3,20 @@ import { Header } from './components/Header';
 import { Navigation } from './components/Navigation';
 import { HeroBanner } from './components/HeroBanner';
 import { EmergencySosModal } from './components/EmergencySosModal';
+import { VoiceSettingsModal } from './components/VoiceSettingsModal';
 import { StudyHubTab } from './components/tabs/StudyHubTab';
 import { BusNavigatorTab } from './components/tabs/BusNavigatorTab';
 import { NoticesFormsTab } from './components/tabs/NoticesFormsTab';
 import { WellbeingTab } from './components/tabs/WellbeingTab';
-import { ActiveTab, Language } from './types/campus';
+import { ActiveTab, Language, VoiceConfig } from './types/campus';
+import { getStoredVoiceConfig } from './utils/audioService';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('study');
-  const [language, setLanguage] = useState<Language>('bn');
+  const [language, setLanguage] = useState<Language>('en'); // Default to clean academic English
   const [isSosModalOpen, setIsSosModalOpen] = useState(false);
+  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
+  const [voiceConfig, setVoiceConfig] = useState<VoiceConfig>(getStoredVoiceConfig());
 
   const toggleLanguage = () => {
     setLanguage((prev) => (prev === 'bn' ? 'en' : 'bn'));
@@ -20,11 +24,13 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-100/70 text-slate-900 flex flex-col font-sans selection:bg-emerald-500 selection:text-white">
-      {/* Top Header with branding, language switcher & emergency hotline */}
+      {/* Top Header with branding, voice controls, language switcher & emergency hotline */}
       <Header
         language={language}
         onToggleLanguage={toggleLanguage}
         onOpenSosModal={() => setIsSosModalOpen(true)}
+        onOpenVoiceModal={() => setIsVoiceModalOpen(true)}
+        voiceConfig={voiceConfig}
       />
 
       {/* Primary Tab Navigation */}
@@ -45,11 +51,19 @@ export default function App() {
 
         {/* Tab Modules */}
         <div style={{ display: activeTab === 'study' ? 'block' : 'none' }}>
-          <StudyHubTab language={language} />
+          <StudyHubTab
+            language={language}
+            onOpenVoiceModal={() => setIsVoiceModalOpen(true)}
+            voiceConfig={voiceConfig}
+          />
         </div>
 
         <div style={{ display: activeTab === 'bus' ? 'block' : 'none' }}>
-          <BusNavigatorTab language={language} />
+          <BusNavigatorTab
+            language={language}
+            onOpenVoiceModal={() => setIsVoiceModalOpen(true)}
+            voiceConfig={voiceConfig}
+          />
         </div>
 
         <div style={{ display: activeTab === 'notices' ? 'block' : 'none' }}>
@@ -60,6 +74,8 @@ export default function App() {
           <WellbeingTab
             language={language}
             onOpenSos={() => setIsSosModalOpen(true)}
+            onOpenVoiceModal={() => setIsVoiceModalOpen(true)}
+            voiceConfig={voiceConfig}
           />
         </div>
       </main>
@@ -71,20 +87,28 @@ export default function App() {
         language={language}
       />
 
+      {/* Voice & Speaker Studio Modal */}
+      <VoiceSettingsModal
+        isOpen={isVoiceModalOpen}
+        onClose={() => setIsVoiceModalOpen(false)}
+        language={language}
+        onConfigChange={(newCfg) => setVoiceConfig(newCfg)}
+      />
+
       {/* Footer */}
       <footer className="bg-slate-900 text-slate-400 border-t border-slate-800 py-6 px-4 text-xs no-print mt-auto">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
           <div>
             <p className="font-bold text-slate-200">
-              IIUC CampusMate (ক্যাম্পাস-সাথী) — Open-Source AI Campus Life Copilot
+              IIUC CampusMate — Intelligent Open-Source AI Campus Life Copilot
             </p>
             <p className="text-[11px] text-slate-500 mt-0.5">
-              Built for Hacktoberfest Hack Day • Powered by Gemma 4 & ElevenLabs
+              Built for Hacktoberfest Hack Day • Powered by Gemma 4 Multimodal & ElevenLabs Multilingual V2
             </p>
           </div>
 
-          <div className="text-[11px] text-slate-400">
-            <span>আন্তর্জাতিক ইসলামী বিশ্ববিদ্যালয় চট্টগ্রাম (IIUC), কুমিরা ক্যাম্পাস</span>
+          <div className="text-[11px] text-slate-400 font-medium">
+            <span>International Islamic University Chittagong (IIUC) • Kumira Campus</span>
           </div>
         </div>
       </footer>

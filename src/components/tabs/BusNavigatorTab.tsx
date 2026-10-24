@@ -4,89 +4,98 @@ import {
   Clock,
   MapPin,
   Search,
+  Filter,
   Navigation,
   ArrowRight,
   Volume2,
-  AlertCircle,
   Calendar,
-  CheckCircle2,
+  AlertCircle,
   ChevronRight,
-  Radio,
+  Sparkles,
+  Square,
+  Sliders,
 } from 'lucide-react';
-import { Language, BusRoute } from '../../types/campus';
+import { Language, BusRoute, VoiceConfig } from '../../types/campus';
 import { IIUC_BUS_ROUTES } from '../../data/busSchedules';
+import { playVoiceSpeech, stopVoiceAudio, getStoredVoiceConfig } from '../../utils/audioService';
 
 interface BusNavigatorTabProps {
   language: Language;
+  onOpenVoiceModal?: () => void;
+  voiceConfig?: VoiceConfig;
 }
 
-export const BusNavigatorTab: React.FC<BusNavigatorTabProps> = ({ language }) => {
+export const BusNavigatorTab: React.FC<BusNavigatorTabProps> = ({
+  language,
+  onOpenVoiceModal,
+  voiceConfig,
+}) => {
   const isBn = language === 'bn';
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [direction, setDirection] = useState<'to_kumira' | 'from_kumira'>('to_kumira');
   const [selectedRouteId, setSelectedRouteId] = useState<string>(IIUC_BUS_ROUTES[0].id);
-  const [currentTime, setCurrentTime] = useState(new Date());
-  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const [direction, setDirection] = useState<'to_kumira' | 'from_kumira'>('to_kumira');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isPlayingAudio, setIsPlayingAudio] = useState<boolean>(false);
+  const [currentTime, setCurrentTime] = useState<Date>(new Date());
 
-  // Keep live clock updated
+  // Real-time ticking clock for exact bus departure matching
   useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 10000);
+    const timer = setInterval(() => setCurrentTime(new Date()), 30000);
     return () => clearInterval(timer);
   }, []);
 
-  // Filter routes based on search
-  const filteredRoutes = useMemo(() => {
-    const q = searchQuery.toLowerCase().trim();
-    if (!q) return IIUC_BUS_ROUTES;
-    return IIUC_BUS_ROUTES.filter((route) => {
-      return (
-        route.routeName.toLowerCase().includes(q) ||
-        route.routeNameBn.includes(q) ||
-        route.startingPoint.toLowerCase().includes(q) ||
-        route.startingPointBn.includes(q) ||
-        route.stops.some((s) => s.toLowerCase().includes(q)) ||
-        route.stopsBn.some((s) => s.includes(q))
-      );
-    });
-  }, [searchQuery]);
-
   const activeRoute = useMemo(() => {
     return (
-      IIUC_BUS_ROUTES.find((r) => r.id === selectedRouteId) ||
-      filteredRoutes[0] ||
-      IIUC_BUS_ROUTES[0]
+      IIUC_BUS_ROUTES.find((r) => r.id === selectedRouteId) || IIUC_BUS_ROUTES[0]
     );
-  }, [selectedRouteId, filteredRoutes]);
+  }, [selectedRouteId]);
 
-  // Helper to parse time string like "08:15 AM" into Date today
-  const parseTimeToDate = (timeStr: string): Date => {
-    const [time, period] = timeStr.split(' ');
-    let [hours, minutes] = time.split(':').map(Number);
-    if (period === 'PM' && hours < 12) hours += 12;
-    if (period === 'AM' && hours === 12) hours = 0;
+  // Filter routes by search query (counter, stops, or route name)
+  const filteredRoutes = useMemo(() => {
+    if (!searchQuery.trim()) return IIUC_BUS_ROUTES;
+    const q = searchQuery.toLowerCase();
+    return IIUC_BUS_ROUTES.filter(
+      (r) =>
+        r.routeName.toLowerCase().includes(q) ||
+        r.routeNameBn.includes(q) ||
+        r.startingPoint.toLowerCase().includes(q) ||
+        r.startingPointBn.includes(q) ||
+        r.stops.some((s) => s.toLowerCase().includes(q)) ||
+        r.stopsBn.some((s) => s.includes(q))
+    );
+  }, [searchQuery]);
 
-    const d = new Date(currentTime);
-    d.setHours(hours, minutes, 0, 0);
-    return d;
-  };
+  const departureList = useMemo(() => {
+    return direction === 'to_kumira'
+      ? activeRoute.departuresToKumira
+      : activeRoute.departuresFromKumira;
+  }, [activeRoute, direction]);
 
-  // Find next upcoming departure
-  const departureList = direction === 'to_kumira'
-    ? activeRoute.departuresToKumira
-    : activeRoute.departuresFromKumira;
-
+  // Compute the next upcoming bus departure from now
   const nextDepartureInfo = useMemo(() => {
-    const now = currentTime.getTime();
-    for (const dep of departureList) {
-      const depDate = parseTimeToDate(dep);
-      const diffMs = depDate.getTime() - now;
-      if (diffMs > 0) {
-        const diffMinutes = Math.round(diffMs / (1000 * 60));
+    const nowHours = currentTime.getHours();
+    const nowMinutes = currentTime.getMinutes();
+    const currentTotalMin = nowHours * 60 + nowMinutes;
+
+    for (const timeStr of departureList) {
+      const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+      if (!match) continue;
+
+      let h = parseInt(match[1], 10);
+      const m = parseInt(match[2], 10);
+      const ampm = match[3].toUpperCase();
+
+      if (ampm === 'PM' && h !== 12) h += 12;
+      if (ampm === 'AM' && h === 12) h = 0;
+
+      const departureTotalMin = h * 60 + m;
+      const diff = departureTotalMin - currentTotalMin;
+
+      if (diff > 0) {
         return {
-          timeStr: dep,
-          diffMinutes,
-          isImminent: diffMinutes <= 15,
+          timeStr,
+          diffMinutes: diff,
+          isImminent: diff <= 20,
         };
       }
     }
@@ -96,57 +105,39 @@ export const BusNavigatorTab: React.FC<BusNavigatorTabProps> = ({ language }) =>
       diffMinutes: -1,
       isImminent: false,
     };
-  }, [activeRoute, direction, currentTime, departureList]);
+  }, [currentTime, departureList]);
 
   // Voice announcement of the bus timetable via ElevenLabs with Web Speech fallback
   const handleAnnounceBus = async () => {
-    const announcementText = isBn
-      ? `মনোযোগ দিন। ${activeRoute.routeNameBn} রুটের পরবর্তী বাস ${nextDepartureInfo.timeStr}-এ ছেড়ে যাবে। সেন্ট্রাল টার্মিনাল কুমিরা পৌঁছাতে আনুমানিক সময় লাগবে ${activeRoute.estimatedMinutes} মিনিট।`
-      : `Attention students. The next bus on ${activeRoute.routeName} departs at ${nextDepartureInfo.timeStr}. Estimated journey time is ${activeRoute.estimatedMinutes} minutes.`;
+    if (isPlayingAudio) {
+      stopVoiceAudio();
+      setIsPlayingAudio(false);
+      return;
+    }
+
+    const currentVoice = voiceConfig || getStoredVoiceConfig();
+    const announcementText =
+      currentVoice.speechLang === 'bn'
+        ? `মনোযোগ দিন শিক্ষার্থী বন্ধুরা। ${activeRoute.routeNameBn} রুটের পরবর্তী বাস ${nextDepartureInfo.timeStr}-এ ছেড়ে যাবে। কুমিরা ক্যাম্পাস পৌঁছাতে আনুমানিক সময় লাগবে ${activeRoute.estimatedMinutes} মিনিট। বোর্ডিং গেট: ${activeRoute.busGateBn}।`
+        : `Attention students. The next university bus on ${activeRoute.routeName} departs at ${nextDepartureInfo.timeStr}. Estimated journey time to Kumira Central Terminal is ${activeRoute.estimatedMinutes} minutes. Boarding gate: ${activeRoute.busGate}.`;
 
     setIsPlayingAudio(true);
-
-    try {
-      const res = await fetch('/api/elevenlabs/tts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: announcementText }),
-      });
-
-      if (res.ok) {
-        const audioBlob = await res.blob();
-        const audioUrl = URL.createObjectURL(audioBlob);
-        const audio = new Audio(audioUrl);
-        audio.onended = () => setIsPlayingAudio(false);
-        audio.onerror = () => fallbackWebSpeech(announcementText);
-        await audio.play();
-        return;
-      }
-    } catch {
-      // Fallback
-    }
-
-    fallbackWebSpeech(announcementText);
+    await playVoiceSpeech({
+      text: announcementText,
+      config: currentVoice,
+      onStart: () => setIsPlayingAudio(true),
+      onEnd: () => setIsPlayingAudio(false),
+      onError: () => setIsPlayingAudio(false),
+    });
   };
 
-  const fallbackWebSpeech = (text: string) => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = isBn ? 'bn-BD' : 'en-US';
-      utterance.rate = 0.95;
-      utterance.onend = () => setIsPlayingAudio(false);
-      utterance.onerror = () => setIsPlayingAudio(false);
-      window.speechSynthesis.speak(utterance);
-    } else {
-      setIsPlayingAudio(false);
-    }
-  };
+  const activeVoiceName = voiceConfig?.name.split(' ')[0] || 'Rachel';
+  const activeVoiceLang = voiceConfig?.speechLang.toUpperCase() || 'EN';
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Top Search & Filter Bar (Upscale Glassmorphic style) */}
-      <div className="bg-white/80 backdrop-blur-xl p-4 sm:p-5 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+      <div className="bg-white/90 backdrop-blur-xl p-4 sm:p-5 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
         {/* Search input */}
         <div className="relative flex-1">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
@@ -155,7 +146,7 @@ export const BusNavigatorTab: React.FC<BusNavigatorTabProps> = ({ language }) =>
             placeholder={
               isBn
                 ? 'কাউন্টার বা স্টপ দিয়ে খুঁজুন (চকবাজার, জিইসি, আগ্রাবাদ, বহদ্দারহাট...)'
-                : 'Search by counter, route or stop (e.g. Chawkbazar, GEC, Agrabad)...'
+                : 'Search counter, stops or area (e.g. Chawkbazar, GEC, Agrabad, Bahaddarhat)...'
             }
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -173,7 +164,7 @@ export const BusNavigatorTab: React.FC<BusNavigatorTabProps> = ({ language }) =>
                 : 'text-slate-700 hover:text-slate-900'
             }`}
           >
-            <span>{isBn ? 'সিটি ➔ কুমিরা ক্যাম্পাস' : 'City ➔ Kumira Campus'}</span>
+            <span>City ➔ Kumira Campus</span>
           </button>
 
           <button
@@ -184,7 +175,7 @@ export const BusNavigatorTab: React.FC<BusNavigatorTabProps> = ({ language }) =>
                 : 'text-slate-700 hover:text-slate-900'
             }`}
           >
-            <span>{isBn ? 'কুমিরা ক্যাম্পাস ➔ সিটি' : 'Kumira Campus ➔ City'}</span>
+            <span>Kumira Campus ➔ City</span>
           </button>
         </div>
       </div>
@@ -194,8 +185,8 @@ export const BusNavigatorTab: React.FC<BusNavigatorTabProps> = ({ language }) =>
         {/* Left Column: Route Cards */}
         <div className="lg:col-span-5 space-y-3">
           <div className="flex items-center justify-between text-xs text-slate-500 px-1 font-semibold">
-            <span>{isBn ? 'উপলব্ধ বাস রুটসমূহ' : 'Available Campus Routes'}</span>
-            <span>{filteredRoutes.length} {isBn ? 'টি রুট' : 'routes'}</span>
+            <span>Available University Routes</span>
+            <span>{filteredRoutes.length} routes found</span>
           </div>
 
           <div className="space-y-2.5 max-h-[560px] overflow-y-auto pr-1">
@@ -223,8 +214,8 @@ export const BusNavigatorTab: React.FC<BusNavigatorTabProps> = ({ language }) =>
                       >
                         {route.routeCode}
                       </span>
-                      <h4 className="font-bold text-slate-900 text-xs sm:text-sm">
-                        {isBn ? route.routeNameBn : route.routeName}
+                      <h4 className="font-bold text-slate-900 text-xs sm:text-sm font-display">
+                        {route.routeName}
                       </h4>
                     </div>
 
@@ -239,13 +230,13 @@ export const BusNavigatorTab: React.FC<BusNavigatorTabProps> = ({ language }) =>
                     <span className="flex items-center gap-1">
                       <MapPin className="w-3 h-3 text-slate-400" />
                       <span className="truncate max-w-[180px]">
-                        {isBn ? route.startingPointBn : route.startingPoint}
+                        {route.startingPoint}
                       </span>
                     </span>
                     <span>•</span>
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3 text-slate-400" />
-                      <span>{route.estimatedMinutes} {isBn ? 'মিনিট' : 'mins'}</span>
+                      <span>{route.estimatedMinutes} mins</span>
                     </span>
                   </div>
                 </div>
@@ -262,65 +253,84 @@ export const BusNavigatorTab: React.FC<BusNavigatorTabProps> = ({ language }) =>
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase tracking-wider mb-1.5">
                 <span>{activeRoute.routeCode}</span>
                 <span>•</span>
-                <span>{activeRoute.busGateBn}</span>
+                <span>{activeRoute.busGate}</span>
               </div>
 
-              <h3 className="text-lg sm:text-xl font-black text-slate-900">
-                {isBn ? activeRoute.routeNameBn : activeRoute.routeName}
+              <h3 className="text-lg sm:text-xl font-black text-slate-900 font-display">
+                {activeRoute.routeName}
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                {isBn ? activeRoute.startingPointBn : activeRoute.startingPoint} ➔{' '}
-                {isBn ? activeRoute.destinationBn : activeRoute.destination}
+                {activeRoute.startingPoint} ➔ {activeRoute.destination}
               </p>
             </div>
 
             {/* Voice Announcement Button (ElevenLabs) */}
-            <button
-              onClick={handleAnnounceBus}
-              disabled={isPlayingAudio}
-              className="flex items-center gap-2 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold transition active:scale-95 cursor-pointer self-start sm:self-auto shrink-0 shadow-xs"
-              title="Listen to departure audio with ElevenLabs Voice"
-            >
-              <Volume2 className={`w-4 h-4 ${isPlayingAudio ? 'animate-bounce text-emerald-600' : 'text-emerald-700'}`} />
-              <span>{isPlayingAudio ? (isBn ? 'ঘোষণা চলছে...' : 'Speaking...') : (isBn ? 'অডিও ঘোষণা শুনুন' : 'Voice Alert')}</span>
-            </button>
+            <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+              <button
+                onClick={handleAnnounceBus}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition active:scale-95 cursor-pointer shadow-xs ${
+                  isPlayingAudio
+                    ? 'bg-emerald-600 text-white animate-pulse'
+                    : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300'
+                }`}
+                title="Listen to departure audio with ElevenLabs Voice"
+              >
+                {isPlayingAudio ? (
+                  <>
+                    <Square className="w-4 h-4 fill-current text-white" />
+                    <span>Stop Alert</span>
+                  </>
+                ) : (
+                  <>
+                    <Volume2 className="w-4 h-4 text-emerald-700" />
+                    <span>Announce ({activeVoiceName} • {activeVoiceLang})</span>
+                  </>
+                )}
+              </button>
+
+              {onOpenVoiceModal && (
+                <button
+                  onClick={onOpenVoiceModal}
+                  className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl border border-slate-300 transition cursor-pointer"
+                  title="Configure Speaker Voice"
+                >
+                  <Sliders className="w-4 h-4" />
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Next Departure Highlight Card */}
-          <div className="bg-gradient-to-br from-emerald-900 to-teal-950 text-white p-5 rounded-2xl relative overflow-hidden shadow-sm">
+          <div className="bg-gradient-to-br from-emerald-900 via-slate-900 to-teal-950 text-white p-5 rounded-2xl relative overflow-hidden shadow-sm">
             <div className="absolute right-0 top-0 w-32 h-32 bg-emerald-500/20 rounded-full blur-2xl"></div>
 
             <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <span className="text-emerald-300 text-xs font-bold uppercase tracking-wider block">
-                  {isBn ? 'পরবর্তী নির্ধারিত বাস' : 'Next Scheduled Departure'}
+                  Next Scheduled Bus Departure
                 </span>
-                <div className="text-3xl sm:text-4xl font-black tracking-tight text-white mt-1">
+                <div className="text-3xl sm:text-4xl font-black tracking-tight text-white mt-1 font-display">
                   {nextDepartureInfo.timeStr}
                 </div>
                 <div className="text-xs text-emerald-200/90 mt-1 flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
                   <span>
                     {nextDepartureInfo.diffMinutes > 0
-                      ? isBn
-                        ? `আর মাত্র ${nextDepartureInfo.diffMinutes} মিনিট বাকি`
-                        : `Departing in approx ${nextDepartureInfo.diffMinutes} mins`
-                      : isBn
-                      ? 'আজকের জন্য পরবর্তী শিডিউল'
-                      : 'Next day schedule'}
+                      ? `Departing in approximately ${nextDepartureInfo.diffMinutes} minutes`
+                      : 'Scheduled for tomorrow morning shift'}
                   </span>
                 </div>
               </div>
 
               <div className="bg-white/10 backdrop-blur-md px-4 py-3 rounded-xl border border-white/15 text-center sm:text-right shrink-0">
                 <div className="text-[10px] text-slate-300 uppercase font-semibold">
-                  {isBn ? 'কাউন্টার গেট' : 'Boarding Gate'}
+                  Boarding Gate
                 </div>
-                <div className="text-base font-black text-amber-300">
-                  {isBn ? activeRoute.busGateBn : activeRoute.busGate}
+                <div className="text-base font-black text-amber-300 font-display">
+                  {activeRoute.busGate}
                 </div>
                 <div className="text-[10px] text-slate-300 mt-0.5">
-                  {isBn ? `যাত্রা সময়: ~${activeRoute.estimatedMinutes} মিনিট` : `Est: ~${activeRoute.estimatedMinutes} min`}
+                  Transit Duration: ~{activeRoute.estimatedMinutes} mins
                 </div>
               </div>
             </div>
@@ -328,16 +338,12 @@ export const BusNavigatorTab: React.FC<BusNavigatorTabProps> = ({ language }) =>
 
           {/* All Shift Departure Times Matrix */}
           <div>
-            <h4 className="font-bold text-slate-900 text-xs sm:text-sm mb-2.5 flex items-center gap-1.5">
+            <h4 className="font-bold text-slate-900 text-xs sm:text-sm mb-2.5 flex items-center gap-1.5 font-display">
               <Clock className="w-4 h-4 text-emerald-600" />
               <span>
                 {direction === 'to_kumira'
-                  ? isBn
-                    ? 'কুমিরা যাওয়ার সকল শিফটের সময়সূচী'
-                    : 'All Shifts: City to Kumira Campus'
-                  : isBn
-                  ? 'কুমিরা থেকে সিটিতে ফেরার সময়সূচী'
-                  : 'All Shifts: Kumira Campus to City'}
+                  ? 'All Scheduled Departures: City to Kumira Campus'
+                  : 'All Scheduled Departures: Kumira Campus to City'}
               </span>
             </h4>
 
@@ -357,7 +363,7 @@ export const BusNavigatorTab: React.FC<BusNavigatorTabProps> = ({ language }) =>
                     <div className="text-xs sm:text-sm">{timeStr}</div>
                     {isNext && (
                       <span className="text-[9px] bg-emerald-800 text-emerald-100 px-1.5 py-0.2 rounded font-bold uppercase tracking-wider block mt-0.5">
-                        {isBn ? 'পরবর্তী' : 'Next'}
+                        Next Bus
                       </span>
                     )}
                   </div>
@@ -368,13 +374,13 @@ export const BusNavigatorTab: React.FC<BusNavigatorTabProps> = ({ language }) =>
 
           {/* Route Stops Flow Timeline */}
           <div>
-            <h4 className="font-bold text-slate-900 text-xs sm:text-sm mb-3 flex items-center gap-1.5">
+            <h4 className="font-bold text-slate-900 text-xs sm:text-sm mb-3 flex items-center gap-1.5 font-display">
               <Navigation className="w-4 h-4 text-emerald-600" />
-              <span>{isBn ? 'বাসের রুট ও যাত্রাপথের স্টপেজসমূহ' : 'Route Stops & Boarding Points'}</span>
+              <span>Route Stops & Boarding Counters</span>
             </h4>
 
             <div className="flex flex-wrap items-center gap-1.5 text-xs">
-              {(isBn ? activeRoute.stopsBn : activeRoute.stops).map((stop, idx, arr) => (
+              {activeRoute.stops.map((stop, idx, arr) => (
                 <React.Fragment key={stop}>
                   <span className="px-2.5 py-1 bg-slate-100 border border-slate-200 rounded-lg text-slate-800 font-medium">
                     {stop}
@@ -391,7 +397,7 @@ export const BusNavigatorTab: React.FC<BusNavigatorTabProps> = ({ language }) =>
           <div className="p-3.5 bg-amber-50 rounded-2xl border border-amber-200 text-xs text-amber-900 flex items-start gap-2.5">
             <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
             <p className="leading-relaxed">
-              {isBn ? activeRoute.importantNotesBn : activeRoute.importantNotesEn}
+              {activeRoute.importantNotesEn}
             </p>
           </div>
         </div>

@@ -33,13 +33,54 @@ app.get('/api/health', (_req: Request, res: Response) => {
 });
 
 /**
+ * GET /api/elevenlabs/voices
+ * Lists available high-quality curated voice personas and status.
+ */
+app.get('/api/elevenlabs/voices', (_req: Request, res: Response) => {
+  const hasKey = Boolean(process.env.ELEVENLABS_API_KEY);
+  res.json({
+    hasKey,
+    voices: [
+      {
+        id: 'Xb7hH8MSUJpSbSDYk0k2',
+        name: 'Alice (Female • Academic Tutor)',
+        gender: 'female',
+        style: 'Clear, articulate, educational lecture tone (English & Bengali)',
+      },
+      {
+        id: 'JBFqnCBsd6RMkjVDRZzb',
+        name: 'George (Male • University Professor)',
+        gender: 'male',
+        style: 'Warm, engaging, natural campus advisor (English & Bengali)',
+      },
+      {
+        id: 'pFZP5JQG7iQjIQuC4Bku',
+        name: 'Lily (Female • Gentle Explainer)',
+        gender: 'female',
+        style: 'Warm, gentle, friendly conversational tone (English & Bengali)',
+      },
+      {
+        id: 'nPczCjzI2devNBz1zQrb',
+        name: 'Brian (Male • Transit Announcer)',
+        gender: 'male',
+        style: 'Deep, confident transit & schedule announcer (English & Bengali)',
+      },
+    ],
+  });
+});
+
+/**
  * POST /api/elevenlabs/tts
- * Generates natural audio using ElevenLabs Multilingual V2.
+ * Generates ultra-natural audio using ElevenLabs Multilingual V2.
+ * Supports custom voice IDs, gender switching, and Bangla/English synthesis.
  * If no key or fails, client falls back to Web Speech API.
  */
 app.post('/api/elevenlabs/tts', async (req: Request, res: Response): Promise<void> => {
-  const apiKey = process.env.ELEVENLABS_API_KEY;
-  const voiceId = process.env.ELEVENLABS_VOICE_ID || '21m00Tcm4TlvDq8ikWAM'; // Rachel/educational voice
+  const clientKey = (req.headers['x-elevenlabs-key'] as string) || req.body.apiKey;
+  const apiKey = clientKey || process.env.ELEVENLABS_API_KEY;
+
+  const requestedVoice = req.body.voiceId;
+  const voiceId = requestedVoice || process.env.ELEVENLABS_VOICE_ID || 'Xb7hH8MSUJpSbSDYk0k2'; // Default Alice
 
   const { text } = req.body;
   if (!text || typeof text !== 'string') {
@@ -65,19 +106,25 @@ app.post('/api/elevenlabs/tts', async (req: Request, res: Response): Promise<voi
           'xi-api-key': apiKey,
         },
         body: JSON.stringify({
-          text: text.slice(0, 1000), // Cap length for speed
+          text: text.slice(0, 1500),
           model_id: 'eleven_multilingual_v2',
           voice_settings: {
-            stability: 0.5,
-            similarity_boost: 0.75,
+            stability: 0.45,
+            similarity_boost: 0.8,
+            style: 0.35,
+            use_speaker_boost: true,
           },
         }),
       }
     );
 
     if (!elevenResponse.ok) {
-      console.warn(`ElevenLabs error status: ${elevenResponse.status}`);
-      res.status(502).json({ fallbackToBrowser: true, error: 'ElevenLabs audio stream error' });
+      const errDetail = await elevenResponse.text();
+      console.warn(`ElevenLabs error status: ${elevenResponse.status}`, errDetail);
+      res.status(502).json({
+        fallbackToBrowser: true,
+        error: `ElevenLabs error (${elevenResponse.status}): ${errDetail}`,
+      });
       return;
     }
 
