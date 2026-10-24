@@ -728,7 +728,7 @@ app.post('/api/elevenlabs/tts', async (req: Request, res: Response): Promise<voi
 });
 
 async function startServer() {
-  const isProd = process.env.NODE_ENV === 'production';
+  const isProd = process.env.NODE_ENV === 'production' || process.env.npm_lifecycle_event === 'start';
 
   if (!isProd) {
     const vite = await createViteServer({
