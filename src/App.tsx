@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Header } from './components/Header';
-import { Navigation } from './components/Navigation';
-import { HeroBanner } from './components/HeroBanner';
+import { Campus3DHero } from './components/Campus3DHero';
 import { EmergencySosModal } from './components/EmergencySosModal';
 import { VoiceSettingsModal } from './components/VoiceSettingsModal';
 import { StudyHubTab } from './components/tabs/StudyHubTab';
@@ -24,29 +23,24 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-100/70 text-slate-900 flex flex-col font-sans selection:bg-emerald-500 selection:text-white">
-      {/* Top Header with branding, voice controls, language switcher & emergency hotline */}
+      {/* Unified Top Header with integrated segmented navigation, voice controls, language & SOS */}
       <Header
         language={language}
         onToggleLanguage={toggleLanguage}
         onOpenSosModal={() => setIsSosModalOpen(true)}
         onOpenVoiceModal={() => setIsVoiceModalOpen(true)}
         voiceConfig={voiceConfig}
-      />
-
-      {/* Primary Tab Navigation */}
-      <Navigation
         activeTab={activeTab}
         onTabChange={setActiveTab}
-        language={language}
       />
 
       {/* Main Container */}
       <main className="flex-1 max-w-6xl w-full mx-auto p-3 sm:p-6">
-        {/* Upscale-inspired Hero Banner */}
-        <HeroBanner
-          language={language}
+        {/* Interactive Three.js 3D Hero Showcase */}
+        <Campus3DHero
+          activeTab={activeTab}
           onNavigateTab={setActiveTab}
-          onOpenSos={() => setIsSosModalOpen(true)}
+          language={language}
         />
 
         {/* Tab Modules */}
@@ -103,7 +97,7 @@ export default function App() {
               IIUC CampusMate — Intelligent Open-Source AI Campus Life Copilot
             </p>
             <p className="text-[11px] text-slate-500 mt-0.5">
-              Built for Hacktoberfest Hack Day • Powered by Gemma 4 Multimodal & ElevenLabs Multilingual V2
+              Built for Hacktoberfest Hack Day • Powered by Gemma 4 Multimodal, Groq & ElevenLabs Multilingual V2
             </p>
           </div>
 

@@ -6,8 +6,12 @@ import {
   Globe,
   Radio,
   Volume2,
+  BookOpen,
+  Bus,
+  FileText,
+  HeartPulse,
 } from 'lucide-react';
-import { Language, VoiceConfig } from '../types/campus';
+import { ActiveTab, Language, VoiceConfig } from '../types/campus';
 
 interface HeaderProps {
   language: Language;
@@ -15,6 +19,8 @@ interface HeaderProps {
   onOpenSosModal: () => void;
   onOpenVoiceModal: () => void;
   voiceConfig: VoiceConfig;
+  activeTab: ActiveTab;
+  onTabChange: (tab: ActiveTab) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -23,11 +29,56 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenSosModal,
   onOpenVoiceModal,
   voiceConfig,
+  activeTab,
+  onTabChange,
 }) => {
   const isBn = language === 'bn';
 
+  const tabs = [
+    {
+      id: 'study' as ActiveTab,
+      labelBn: 'নোট ও কুইজ এআই',
+      labelEn: 'Study Hub & Quiz',
+      subBn: 'ছবি থেকে কুইজ',
+      subEn: 'Gemma Notes AI',
+      icon: BookOpen,
+      accentColor: 'text-emerald-600 bg-emerald-50',
+      activeBg: 'bg-emerald-600 text-white',
+    },
+    {
+      id: 'bus' as ActiveTab,
+      labelBn: 'কুমিরা বাস শিডিউল',
+      labelEn: 'Kumira Bus Timetable',
+      subBn: 'পরবর্তী বাস ট্র্যাকিং',
+      subEn: '16 Live Routes',
+      icon: Bus,
+      accentColor: 'text-amber-600 bg-amber-50',
+      activeBg: 'bg-amber-600 text-white',
+    },
+    {
+      id: 'notices' as ActiveTab,
+      labelBn: 'কভার পেজ ও দরখাস্ত',
+      labelEn: 'Lab Cover & Leave Gen',
+      subBn: 'A4 প্রিন্ট ফরম',
+      subEn: 'A4 PDF Ready',
+      icon: FileText,
+      accentColor: 'text-blue-600 bg-blue-50',
+      activeBg: 'bg-blue-600 text-white',
+    },
+    {
+      id: 'wellbeing' as ActiveTab,
+      labelBn: 'কেয়ার ও মেন্টাল এআই',
+      labelEn: 'Care & Mental Health AI',
+      subBn: 'মন-সাথী কাউন্সিলর',
+      subEn: 'Triage & Counselor',
+      icon: HeartPulse,
+      accentColor: 'text-rose-600 bg-rose-50',
+      activeBg: 'bg-rose-600 text-white',
+    },
+  ];
+
   return (
-    <header className="bg-white/95 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-40 no-print transition-all">
+    <header className="bg-white/95 backdrop-blur-xl border-b border-slate-200/90 sticky top-0 z-40 no-print transition-all shadow-xs">
       {/* Top micro-bar for Live Campus Status and Emergency Hotline */}
       <div className="bg-slate-900 text-white px-4 py-1.5 text-[11px] border-b border-slate-800">
         <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2">
@@ -48,7 +99,7 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="flex items-center gap-3">
             <span className="hidden md:inline-flex items-center gap-1.5 text-slate-300 text-[10px]">
               <Radio className="w-3 h-3 text-emerald-400" />
-              <span>Gemma 4 • ElevenLabs Multimodal</span>
+              <span>Gemma 4 • Groq • ElevenLabs Multimodal</span>
             </span>
 
             <button
@@ -62,11 +113,11 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      {/* Main Elevated Nav Bar */}
-      <div className="max-w-6xl mx-auto px-4 py-3 sm:py-3.5">
+      {/* Main Elevated Nav Bar: Branding & Tools */}
+      <div className="max-w-6xl mx-auto px-4 py-2.5 sm:py-3">
         <div className="flex items-center justify-between gap-3">
           {/* Logo & Identity */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0">
             <div className="relative group">
               <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-indigo-500 rounded-2xl blur-xs opacity-75 group-hover:opacity-100 transition duration-300"></div>
               <div className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-600 text-white flex items-center justify-center shadow-sm">
@@ -79,20 +130,20 @@ export const Header: React.FC<HeaderProps> = ({
                 <h1 className="text-lg sm:text-2xl font-black tracking-tight text-slate-900 leading-none font-display">
                   Campus<span className="bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 bg-clip-text text-transparent">Mate</span>
                 </h1>
-                <span className="text-[10px] sm:text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-full">
+                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-full">
                   IIUC Copilot
                 </span>
               </div>
-              <p className="text-[11px] sm:text-xs text-slate-500 mt-1 font-medium hidden sm:block">
+              <p className="text-[11px] text-slate-500 mt-1 font-medium hidden md:block">
                 {isBn
-                  ? 'হাতের লেখার নোট থেকে কুইজ • কুমিরা বাস • নোটিশ ও ছুটির দরখাস্ত • স্টুডেন্ট কেয়ার'
-                  : 'Handwritten Notes to Quiz • Kumira Bus • Notices & Leave Letters • 24/7 Care'}
+                  ? 'হাতের লেখার নোট থেকে কুইজ • কুমিরা বাস • ল্যাব কভার ও দরখাস্ত • মেন্টাল হেলথ এআই'
+                  : 'Study Hub • Kumira Bus • A4 Lab Cover & Leave • Mental Health AI'}
               </p>
             </div>
           </div>
 
-          {/* Right Action Tools */}
-          <div className="flex items-center gap-2 sm:gap-2.5">
+          {/* Right Action Tools: Voice, Language, SOS */}
+          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
             {/* Voice Settings Trigger */}
             <button
               onClick={onOpenVoiceModal}
@@ -107,24 +158,68 @@ export const Header: React.FC<HeaderProps> = ({
               </span>
             </button>
 
-            {/* Language Switcher Button (Upscale style glass pill) */}
+            {/* Language Switcher */}
             <button
               onClick={onToggleLanguage}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200/80 text-slate-800 rounded-xl text-xs font-bold border border-slate-300/80 transition active:scale-95 cursor-pointer shadow-xs"
               title="Toggle Bengali / English"
             >
               <Globe className="w-3.5 h-3.5 text-emerald-600" />
-              <span>{isBn ? 'EN (English)' : 'বাংলা (BN)'}</span>
+              <span>{isBn ? 'EN' : 'বাংলা'}</span>
             </button>
 
-            {/* Quick Emergency Button */}
+            {/* Emergency Button */}
             <button
               onClick={onOpenSosModal}
-              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition shadow-xs active:scale-95 cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition shadow-xs active:scale-95 cursor-pointer"
             >
               <ShieldAlert className="w-3.5 h-3.5" />
-              <span>{isBn ? 'জরুরি হেল্প' : 'Help & SOS'}</span>
+              <span className="hidden sm:inline">{isBn ? 'জরুরি হেল্প' : 'Help & SOS'}</span>
+              <span className="sm:hidden">SOS</span>
             </button>
+          </div>
+        </div>
+
+        {/* Clean Integrated Segmented Pill Navigation (Zero Overlap & 100% Responsive) */}
+        <div className="mt-2.5 pt-2 border-t border-slate-100">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-1.5 sm:gap-2">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => onTabChange(tab.id)}
+                  className={`flex items-center gap-2.5 px-3 py-2 sm:py-2.5 rounded-2xl transition-all duration-200 cursor-pointer text-left border ${
+                    isActive
+                      ? 'bg-slate-900 text-white border-slate-900 shadow-md font-bold'
+                      : 'bg-slate-50 hover:bg-slate-100/90 text-slate-700 border-slate-200/80 font-medium'
+                  }`}
+                >
+                  <div
+                    className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                      isActive ? tab.activeBg : tab.accentColor
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                  </div>
+
+                  <div className="leading-tight truncate">
+                    <div className="text-xs sm:text-sm font-bold truncate">
+                      {isBn ? tab.labelBn : tab.labelEn}
+                    </div>
+                    <div
+                      className={`text-[10px] mt-0.5 truncate ${
+                        isActive ? 'text-slate-300 font-medium' : 'text-slate-500'
+                      }`}
+                    >
+                      {isBn ? tab.subBn : tab.subEn}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
