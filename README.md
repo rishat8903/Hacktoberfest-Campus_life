@@ -27,6 +27,50 @@ Additionally, the platform generates 1-click official A4 printable academic leav
   - **[IIUC Kumira Transport Schedule](https://www.iiuc.ac.bd/):** Authentic 16-route Chittagong City ⇄ Kumira Campus bus timetables, counter boarding gates, and stop timelines.
   - **Sample CSE Academic Materials:** Verified handwritten lecture note datasets (CSE-3501 Database Normalization, Algorithms, Software Engineering).
 
+## Architecture
+![System Architecture](docs/architecture.png)
+
+```mermaid
+graph TD
+    Student(("Student")) -->|opens| Entry["Web App Entry (main.tsx)"]
+    
+    subgraph AppShell ["App Shell"]
+        Entry -->|renders| Shell["App Shell (App.tsx)"]
+        Shell -->|renders| Header["Header Controls (Header.tsx)"]
+        Shell -->|renders| Hero["Campus 3D Hero (Campus3DHero.tsx)"]
+    end
+
+    subgraph StudySupport ["Study Support"]
+        Shell -->|renders| StudyHub["Study Hub (StudyHubTab.tsx)"]
+        StudyHub -->|loads sample| SampleNotes["Sample Study Notes"]
+    end
+
+    subgraph CampusServices ["Campus Services"]
+        Shell -->|renders| Notices["Notices & Forms (NoticesFormsTab.tsx)"]
+        Shell -->|renders| BusNav["Bus Navigator (BusTab.tsx)"]
+        BusNav -->|reads schedules| BusData[("Bus Schedules (busSchedules.ts)")]
+        Shell -->|renders| Wellbeing["Wellbeing & Triage (WellbeingTab.tsx)"]
+        Wellbeing -->|opens SOS| SOS["Emergency SOS"]
+    end
+
+    subgraph SharedServices ["Shared Services"]
+        Header -->|sets voice| VoiceSettings["Voice Settings"]
+        StudyHub -->|requests speech| AudioService["Audio Service (audioService.ts)"]
+        BusNav -->|requests speech| AudioService
+        Wellbeing -->|requests speech| AudioService
+        VoiceSettings --> AudioService
+        AudioService -->|requests TTS| Gateway["API Gateway (server.ts)"]
+    end
+
+    subgraph ExternalAI ["AI & Cloud Services"]
+        StudyHub -.->|analyzes notes| GemmaAI["Google Gemma Multimodal"]
+        Notices -.->|decodes notices| GemmaAI
+        Wellbeing -.->|mental health chat & triage| GroqAI["Groq LPU (Qwen / LLaMA)"]
+        Gateway -->|synthesizes speech| ElevenLabs["ElevenLabs Multilingual V2"]
+        Gateway -.->|falls back| BrowserTTS["Browser Native Speech Synthesis"]
+    end
+```
+
 ## How to run it
 1. **Clone the repo**
    ```bash
