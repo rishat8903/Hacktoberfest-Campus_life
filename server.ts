@@ -207,8 +207,65 @@ Extract and structure all essential details into valid JSON:
   "requiredDocuments": ["Documents student must bring, e.g. Admit Card, ID card, Bank slip"]
 }`;
 
-    // Target open model Gemma 3.8 / 4 or Gemini fallback
-    const modelsToTry = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-flash-latest'];
+    // Try Groq Vision API first if key configured (Ultra-fast < 1s inference)
+    const groqApiKey = (req.headers['x-groq-key'] as string) || process.env.GROQ_API_KEY;
+    if (groqApiKey) {
+      try {
+        const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${groqApiKey}`,
+          },
+          body: JSON.stringify({
+            model: 'llama-3.2-11b-vision-preview',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              {
+                role: 'user',
+                content: [
+                  {
+                    type: 'text',
+                    text: isStudyNotes
+                      ? 'Analyze these study notes thoroughly. Output pure JSON matching the requested schema.'
+                      : 'Analyze this official notice thoroughly. Output pure JSON matching the requested schema.',
+                  },
+                  {
+                    type: 'image_url',
+                    image_url: {
+                      url: `data:${mimeType || 'image/jpeg'};base64,${cleanBase64}`,
+                    },
+                  },
+                ],
+              },
+            ],
+            response_format: { type: 'json_object' },
+            temperature: 0.2,
+          }),
+        });
+
+        if (groqRes.ok) {
+          const groqData = await groqRes.json();
+          const rawText = groqData.choices?.[0]?.message?.content;
+          if (rawText) {
+            const parsed = JSON.parse(rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, ''));
+            res.json({ success: true, model: 'groq/llama-3.2-11b-vision', data: parsed });
+            return;
+          }
+        } else {
+          console.warn('Groq Vision error status:', groqRes.status, await groqRes.text());
+        }
+      } catch (groqErr: unknown) {
+        console.warn('Groq Vision exception:', (groqErr as Error)?.message);
+      }
+    }
+
+    // Google Models (Using fast low-latency models instead of deprecated or deep-thinking models)
+    const modelsToTry = [
+      'gemini-3.1-flash-lite',
+      'gemini-3.5-flash',
+      'gemma-4-26b-a4b-it',
+    ];
 
     for (const modelName of modelsToTry) {
       try {
