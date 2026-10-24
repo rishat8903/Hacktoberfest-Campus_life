@@ -1,122 +1,83 @@
 # IIUC CampusMate (ক্যাম্পাস-সাথী)
-
-> **One line:** An AI-powered daily campus life and study copilot that decodes handwritten lecture notes into exam quizzes, navigates Kumira university bus timetables with voice alerts, deciphers scattered campus notices, and generates 1-click printable academic leave applications for IIUC students.
-
----
+An AI-powered campus life copilot that decodes handwritten lecture notes into practice quizzes, tracks Kumira university bus schedules with real-time alerts, generates official A4 academic leave applications and lab report covers, and provides speech-enabled student medical triage and mental health counseling for IIUC students.
 
 ## The problem
-Who faces it, and how they deal with it today:
-Over 20,000 students at the International Islamic University Chittagong (IIUC) campus in **Kumira, Sitakunda (25km outside Chittagong city)** face the same daily frustrations:
-1. **Commuter & Transport Chaos:** Commuters from Chawkbazar, GEC, Bahaddarhat, Agrabad, and Muradpur never know when the next bus to Kumira departs, weekend shifts, or counter delays. Today, students rely on chaotic Facebook groups and calling friends.
-2. **Scattered Notices & Red Tape:** Exam dates, fee deadlines, and room changes are posted as physical papers or noisy group photos. Missing an exam due to sickness requires navigating three different offices (Dean, Chairman, Provost) within 3 days; students routinely receive "F" grades because they don't know the exact administrative paperwork format.
-3. **Locked Lecture Notes:** Handwritten lecture notes and past questions sit in phones as unorganized photos. Students struggle to extract formulas or test their knowledge before exams.
-4. **Dorm Sickness & Stress:** Living far from the city in Usman and Ali residential halls, sick students at night don't know whether to rest in the dorm, visit the Kumira campus medical center, or call an ambulance to CMCH hospital.
-
----
+Over 20,000 university students commuting to and living at the International Islamic University Chittagong (IIUC) campus in **Kumira, Sitakunda (25km outside Chittagong city)** face severe daily bottlenecks:
+- **Transport Uncertainty:** Commuting across 16 major city routes (Chawkbazar, GEC, Bahaddarhat, Agrabad, etc.) leaves students stranded without real-time knowledge of next bus departure times, counter gates, or weekend schedules. Today, students rely on scattered Facebook group posts and frantic phone calls.
+- **Academic Bureaucracy & Red Tape:** Missing an exam or lab due to illness requires submitting strict, formatted leave letters to Chairmen and Deans within 3 days; students often fail or lose marks because they lack the required official application format.
+- **Unorganized Handwritten Notes:** Lecture notes and past exam papers remain trapped as unorganized photos in mobile galleries, with no quick way to extract formulas or self-test understanding before exams.
+- **Nighttime Sickness & Academic Stress:** Students living in Usman and Ali dormitories far from the city struggle with late-night health emergencies, not knowing whether to visit the campus medical center or seek urgent hospital care, alongside overwhelming pre-exam mental anxiety.
 
 ## The solution
-What your app does, in 3–4 sentences:
-**IIUC CampusMate** is a bilingual (বাংলা ও English) campus companion powered by open-source **Gemma 4** multimodal vision and **ElevenLabs** natural voice. 
-Students can photograph handwritten notebook pages to get an instant plain-Bangla concept breakdown and 3-question self-test practice quiz with audio read-aloud. 
-The Kumira Bus Navigator provides real-time countdown timers, counter boarding gates, and voice departure alerts for all 16 university routes. 
-For campus bureaucracy and sickness, it decodes paper notices and automatically generates official, print-ready A4 academic leave applications formatted for IIUC department chairmen, alongside a 4-tier student health triage engine and hall SOS emergency alerts.
-
----
+**IIUC CampusMate** is a bilingual (English & বাংলা) student portal built specifically for the IIUC Kumira campus community. 
+Students can snap a photo of any handwritten lecture note or past paper to get an instant concept summary and an interactive 3-question self-test practice quiz with natural speech read-aloud. 
+The live Kumira Bus Timetable provides real-time departure countdowns, counter gates, and audio travel announcements across all 16 city-campus routes. 
+Additionally, the platform generates 1-click official A4 printable academic leave applications and lab report covers, provides voice-enabled physical symptom clinical triage, and features an empathetic interactive AI counselor for exam stress and mental health support.
 
 ## How it works
 - **Model(s) used:**
-  - **[Gemma 4 / Gemma Multimodal](https://ai.google.dev/gemma):** Open-weights vision & language model used to transcribe Bengali/English handwritten lecture notes, analyze university paper notices, and generate contextual practice quizzes.
-  - **[ElevenLabs Multilingual V2](https://elevenlabs.io):** Natural voice synthesis for reading study summaries, bus departure announcements, and pre-exam relaxation guidance (with browser-native Web Speech fallback).
+  - **[Gemma 4 / Multimodal Vision & Language](https://ai.google.dev/gemma):** Transcribes handwritten lecture notes, past exam papers, and notice boards into structured summaries, key formulas, and self-test quizzes.
+  - **[Qwen 3.8 / LLaMA on Groq](https://groq.com/):** High-speed LLM inference engine providing sub-300ms response times for the Student Mental Health Counselor and symptom clinical triage.
+  - **[ElevenLabs Multilingual V2](https://elevenlabs.io/):** Ultra-realistic voice synthesis for study note read-alouds, bus departure announcements, and live voice conversation mode in mental health counseling (with native Web Speech API fallback).
 - **Tech stack:**
-  - **Frontend:** React 19, TypeScript, Tailwind CSS v4, Lucide Icons, Vite
-  - **Backend:** Node.js, Express API gateway, `@google/genai` SDK
-  - **Design System:** Upscale-inspired glassmorphism, floating ambient glow orbs, curved underline SVG accents, responsive mobile-first architecture
+  - **Frontend:** React 19, TypeScript, Tailwind CSS v4, Three.js (interactive 3D campus core), Lucide React, Vite.
+  - **Backend:** Node.js, Express, `@google/genai` SDK, Groq Cloud API, ElevenLabs REST API.
+  - **Deployment & Containers:** Docker (Alpine multi-stage), Render Blueprint (`render.yaml`), Railway.
 - **Datasets (if any):**
-  - Verified IIUC Kumira ⇄ Chittagong City Bus Transport Schedules (Chawkbazar, GEC, Bahaddarhat, Agrabad counters)
-  - Sample CSE-3501 Database Normalization handwritten lecture note dataset
-
----
+  - **[IIUC Kumira Transport Schedule](https://www.iiuc.ac.bd/):** Authentic 16-route Chittagong City ⇄ Kumira Campus bus timetables, counter boarding gates, and stop timelines.
+  - **Sample CSE Academic Materials:** Verified handwritten lecture note datasets (CSE-3501 Database Normalization, Algorithms, Software Engineering).
 
 ## How to run it
+1. **Clone the repo**
+   ```bash
+   git clone https://github.com/rishat8903/Hacktoberfest-Campus_life.git
+   cd Hacktoberfest-Campus_life
+   ```
 
-### 1. Clone the repo
-```bash
-git clone https://github.com/your-username/iiuc-campusmate.git
-cd iiuc-campusmate
-```
+2. **Install requirements**
+   ```bash
+   npm install
+   ```
+   *(Optional)* Copy `.env.example` to `.env` and set your API keys:
+   ```bash
+   cp .env.example .env
+   ```
+   *(Note: The application includes offline curriculum fallbacks and preloaded samples, so all core features work even without active API keys).*
 
-### 2. Install requirements
-```bash
-npm install
-# (On Windows PowerShell if scripts are blocked, use: npm.cmd install)
-```
+3. **Run the app**
+   ```bash
+   npm run dev
+   ```
+   Open [http://localhost:3000](http://localhost:3000) in your browser.
+   To run in production mode:
+   ```bash
+   npm run build
+   npm start
+   ```
 
-### 3. Set API Keys (Optional)
-Copy `.env.example` to `.env`:
-```bash
-cp .env.example .env
-```
-Add your free [Google AI Studio API key](https://aistudio.google.com/) for Gemma and optional ElevenLabs key:
-```env
-PORT=3000
-GEMINI_API_KEY="your-gemini-key"
-ELEVENLABS_API_KEY="your-elevenlabs-key" # (Optional: falls back to browser voice)
-```
-*(The app is fully functional with preloaded authentic sample data even before adding API keys!)*
+## Screenshots / demo
+- **Study Hub & Handwritten Notes to Quiz:**
+  ![Study Hub & Quiz](docs/screenshots/study_hub.png)
 
-### 4. Run the app
-```bash
-npm run dev
-# (Or in Windows PowerShell: npm.cmd run dev)
-```
-Open **[http://localhost:3000](http://localhost:3000)** in your browser.
+- **Kumira Bus Timetable & Route Navigator:**
+  ![Kumira Bus Timetable](docs/screenshots/bus_timetable.png)
 
----
+- **A4 Lab Report Cover & Academic Leave Generator:**
+  ![Lab Cover & Leave Generator](docs/screenshots/lab_cover_leave.png)
 
-## Key Features & Demo Walkthrough
+- **Student Care, Symptom Triage & AI Mental Health Counselor:**
+  ![Student Care & Counseling](docs/screenshots/student_care.png)
 
-### 1. 📚 Study Hub & Exam Quiz (Gemma 4 Multimodal + ElevenLabs)
-- Snap a photo or upload handwritten lecture notes / past question papers.
-- Gemma 4 transcribes handwriting, diagrams, and equations.
-- Generates a clear Bangla explanation (`সহজ ভাষায় ব্যাখ্যা`) and academic English summary.
-- Creates an interactive 3-question mock quiz with instant answer evaluation and rationale.
-- Click **"ইলেভেনল্যাবস অডিও শুনুন"** to hear natural speech audio of the summary while commuting on the bus.
-- Click **"নমুনা সিএসই নোট দেখুন"** for instant 1-tap demo testing.
+## What's not done yet
+- **Live GPS Fleet Tracking:** Currently relies on scheduled university timetables with countdown timers; physical GPS tracker hardware integration on university buses is planned.
+- **Automated University Portal Integration:** Notice extraction requires uploading/photographing paper notice boards; direct scraper integration with the university's internal notice board is pending official API access.
+- **Mobile Push Notifications:** Scheduled bus alerts currently require an active browser tab; background Web Push notifications via Service Worker (PWA) on mobile devices are under active development.
 
-### 2. 🚌 Kumira Bus Navigator
-- Covers all major IIUC routes: Chawkbazar, GEC Circle, Bahaddarhat, Muradpur, Agrabad, and Boropool.
-- Live countdown timer to the next scheduled departure.
-- Filter by **"City ➔ Kumira Campus"** or **"Kumira Campus ➔ City"**.
-- Counter boarding gates, estimated travel time, route stop timeline, and student ID advisory.
-- Voice announcement button: audio read-out of next departure.
-
-### 3. 📋 Campus Notices & 1-Click Leave Generator
-- Decodes university notice photos: extracted deadlines, fees, and exact office room numbers (e.g. Admin Building Room 304).
-- **Official A4 Leave Application Builder:** Pre-fills student ID, department, and illness reason into an official formatted university letter ready for Chairman / Dean / Provost sign-off.
-- Click **"Print / Save as PDF"** to print directly from the browser.
-
-### 4. 🩺 Campus Care & Dorm SOS (Student Wellbeing)
-- **4-Tier Deterministic Health Triage:** Evaluates fever, cafeteria food contamination, and distress to recommend:
-  - *Tier 1: Hall Rest & Hydration*
-  - *Tier 2: IIUC Kumira Campus Medical Center*
-  - *Tier 3: Specialized Diagnostic Clinic*
-  - *Tier 4: Immediate Hospital Emergency (CMCH / 999)*
-- **Mind-Care 4-4-4 Box Breathing:** 1-minute guided pre-exam panic de-stress exercise.
-- **One-Tap Emergency SOS:** Pre-filled WhatsApp and direct SMS alert to hall roommates and assistant provosts.
-
----
-
-## What's not done yet (Honest Limitations)
-- Live GPS tracking of physical IIUC buses (requires hardware GPS trackers on university bus fleets; currently powered by scheduled timetables).
-- Dynamic course syllabus sync across all IIUC faculties (currently tested with CSE, BBA, and EEE curriculum samples).
-- Push notifications on mobile require PWA service worker registration on HTTPS.
-
----
-
-## Credits & Attribution
-- Built for **Hacktoberfest Hack Day Chittagong x IEEE Computer Society IIUC SBC** organized by **ML Bangladesh**.
-- Inspired by real campus challenges faced by students at the International Islamic University Chittagong (Kumira, Sitakunda).
-- Open-weights AI: **Google Gemma 4 / Gemma Multimodal**.
-- Voice AI: **ElevenLabs Multilingual V2**.
-- Icons: **Lucide React**.
-- Styling: **Tailwind CSS v4**.
+## Credits
+- **[Google Gemma](https://ai.google.dev/gemma):** Multimodal document & handwritten note analysis.
+- **[ElevenLabs](https://elevenlabs.io/):** Multilingual voice synthesis (Voice ID `Xb7hH8MSUJpSbSDYk0k2`).
+- **[Groq](https://groq.com/):** Low-latency LPU inference for real-time triage and mental health counseling.
+- **[Three.js](https://threejs.org/):** Interactive 3D WebGL campus core visualization.
+- **[Lucide React](https://lucide.dev/):** UI icon system.
+- **[Tailwind CSS](https://tailwindcss.com/):** Modern responsive styling.
+- **Organized for:** Hacktoberfest Chittagong x IEEE Computer Society IIUC Student Branch Chapter.
