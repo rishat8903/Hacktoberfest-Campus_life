@@ -125,12 +125,12 @@ export const VoiceSettingsModal: React.FC<VoiceSettingsModalProps> = ({
             </div>
             <div>
               <h3 className="font-extrabold text-base sm:text-lg">
-                {isBn ? 'ইলেভেনল্যাবস ভয়েস ও অডিও সেটিংস' : 'ElevenLabs Voice & Audio Studio'}
+                {isBn ? 'ভয়েস ও অডিও ন্যারেশন সেটিংস' : 'Voice Narration & Audio Studio'}
               </h3>
               <p className="text-xs text-purple-200">
                 {isBn
                   ? 'প্রাকৃতিক মানবিক কণ্ঠে নোট ও বাসের ঘোষণা শুনুন'
-                  : 'Natural Multilingual AI Speech for Lecture Notes & Bus Alerts'}
+                  : 'Natural Speech Narration for Lecture Notes, Bus Alerts & Counseling'}
               </p>
             </div>
           </div>

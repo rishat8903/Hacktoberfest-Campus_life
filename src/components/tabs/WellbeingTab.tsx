@@ -258,23 +258,23 @@ export const WellbeingTab: React.FC<WellbeingTabProps> = ({
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      {/* Top Upscale-Style Selector: Clinical Health Triage vs Mental Health AI Companion */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-5 sm:p-6 border border-slate-800 shadow-xl no-print">
-        {/* Ambient glow orbs */}
-        <div className="absolute -top-10 -right-10 w-60 h-60 bg-purple-500/15 rounded-full blur-3xl pointer-events-none animate-pulse-glow"></div>
-        <div className="absolute -bottom-10 -left-10 w-60 h-60 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none"></div>
+      {/* Top Selector: Clinical Health Triage vs Mental Health Companion */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-950 via-teal-950 to-slate-950 text-white p-5 sm:p-6 border border-emerald-900/50 shadow-md no-print">
+        {/* Ambient subtle glow */}
+        <div className="absolute -top-10 -right-10 w-60 h-60 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute -bottom-10 -left-10 w-60 h-60 bg-teal-500/15 rounded-full blur-3xl pointer-events-none"></div>
 
         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-semibold text-purple-300 mb-2">
-              <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-              <span>CampusCare AI • Student Wellbeing Ecosystem</span>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-900/60 backdrop-blur-md border border-emerald-500/30 text-xs font-semibold text-emerald-300 mb-2">
+              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Campus Student Care • Confidential Health & Wellbeing</span>
             </div>
             <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight font-display">
-              Student Health Triage & Mental Health AI
+              Student Health Triage & Mental Health Companion
             </h2>
-            <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-xl">
-              Type your physical symptoms for deterministic clinical triage, or talk with MindCompanion AI for empathetic mental health and exam stress support.
+            <p className="text-xs sm:text-sm text-emerald-100/90 mt-1 max-w-xl">
+              Type your symptoms for hospital & clinic evaluation, or talk with MindCompanion for stress relief and empathetic advice.
             </p>
           </div>
 
@@ -296,12 +296,12 @@ export const WellbeingTab: React.FC<WellbeingTabProps> = ({
               onClick={() => setActiveSubTab('mental_health')}
               className={`flex-1 md:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
                 activeSubTab === 'mental_health'
-                  ? 'bg-purple-600 text-white shadow-md'
+                  ? 'bg-emerald-600 text-white shadow-md'
                   : 'text-slate-300 hover:text-white hover:bg-white/10'
               }`}
             >
               <Smile className="w-4 h-4" />
-              <span>Mental Health AI</span>
+              <span>Mental Health Companion</span>
             </button>
           </div>
         </div>
@@ -708,7 +708,7 @@ export const WellbeingTab: React.FC<WellbeingTabProps> = ({
             </form>
 
             <div className="flex items-center justify-between text-[10px] text-slate-400 mt-2 px-1">
-              <span>Confidential & Private • Powered by Groq / Gemma Multilingual AI</span>
+              <span>Confidential & Private • Student Mental Health Support</span>
               <span>Crisis Hotline: Call 999 or Campus Ambulance</span>
             </div>
           </div>

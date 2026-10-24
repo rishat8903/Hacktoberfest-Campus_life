@@ -40,7 +40,7 @@ export const Header: React.FC<HeaderProps> = ({
       labelBn: 'নোট ও কুইজ এআই',
       labelEn: 'Study Hub & Quiz',
       subBn: 'ছবি থেকে কুইজ',
-      subEn: 'Gemma Notes AI',
+      subEn: 'Notes to Practice Quiz',
       icon: BookOpen,
       accentColor: 'text-emerald-600 bg-emerald-50',
       activeBg: 'bg-emerald-600 text-white',
@@ -67,13 +67,13 @@ export const Header: React.FC<HeaderProps> = ({
     },
     {
       id: 'wellbeing' as ActiveTab,
-      labelBn: 'কেয়ার ও মেন্টাল এআই',
-      labelEn: 'Care & Mental Health AI',
-      subBn: 'মন-সাথী কাউন্সিলর',
-      subEn: 'Triage & Counselor',
+      labelBn: 'স্টুডেন্ট কেয়ার ও কাউন্সেলিং',
+      labelEn: 'Student Care & Counseling',
+      subBn: 'মন-সাথী সাপোর্ট',
+      subEn: 'Triage & Support',
       icon: HeartPulse,
-      accentColor: 'text-rose-600 bg-rose-50',
-      activeBg: 'bg-rose-600 text-white',
+      accentColor: 'text-emerald-600 bg-emerald-50',
+      activeBg: 'bg-emerald-600 text-white',
     },
   ];
 
@@ -99,7 +99,7 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="flex items-center gap-3">
             <span className="hidden md:inline-flex items-center gap-1.5 text-slate-300 text-[10px]">
               <Radio className="w-3 h-3 text-emerald-400" />
-              <span>Gemma 4 • Groq • ElevenLabs Multimodal</span>
+              <span>{isBn ? '২৪/৭ ক্যাম্পাস সার্ভিস' : '24/7 Campus Services'}</span>
             </span>
 
             <button
@@ -128,16 +128,16 @@ export const Header: React.FC<HeaderProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-lg sm:text-2xl font-black tracking-tight text-slate-900 leading-none font-display">
-                  Campus<span className="bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 bg-clip-text text-transparent">Mate</span>
+                  Campus<span className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 bg-clip-text text-transparent">Mate</span>
                 </h1>
                 <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-full">
-                  IIUC Copilot
+                  IIUC Portal
                 </span>
               </div>
               <p className="text-[11px] text-slate-500 mt-1 font-medium hidden md:block">
                 {isBn
-                  ? 'হাতের লেখার নোট থেকে কুইজ • কুমিরা বাস • ল্যাব কভার ও দরখাস্ত • মেন্টাল হেলথ এআই'
-                  : 'Study Hub • Kumira Bus • A4 Lab Cover & Leave • Mental Health AI'}
+                  ? 'আন্তর্জাতিক ইসলামী বিশ্ববিদ্যালয় চট্টগ্রাম • কুমিরা ক্যাম্পাস'
+                  : 'International Islamic University Chittagong • Student Portal'}
               </p>
             </div>
           </div>
@@ -193,7 +193,7 @@ export const Header: React.FC<HeaderProps> = ({
                   onClick={() => onTabChange(tab.id)}
                   className={`flex items-center gap-2.5 px-3 py-2 sm:py-2.5 rounded-2xl transition-all duration-200 cursor-pointer text-left border ${
                     isActive
-                      ? 'bg-slate-900 text-white border-slate-900 shadow-md font-bold'
+                      ? 'bg-emerald-900 text-white border-emerald-800 shadow-md font-bold'
                       : 'bg-slate-50 hover:bg-slate-100/90 text-slate-700 border-slate-200/80 font-medium'
                   }`}
                 >

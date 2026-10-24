@@ -157,7 +157,7 @@ export const StudyHubTab: React.FC<StudyHubTabProps> = ({
           <div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-[11px] font-bold border border-emerald-200/80 mb-2">
               <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Gemma 4 Multimodal • ElevenLabs AI Audio</span>
+              <span>Study Hub • Smart Lecture Notes & Quiz</span>
             </div>
             <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight font-display">
               {isBn ? 'হাতে লেখা নোট টু কুইজ ও ব্যাখ্যা' : 'Lecture Notes to Practice Quiz & Audio'}
@@ -223,10 +223,10 @@ export const StudyHubTab: React.FC<StudyHubTabProps> = ({
             <RefreshCw className="w-5 h-5 text-emerald-600 animate-spin shrink-0" />
             <div className="text-xs sm:text-sm">
               <span className="font-bold text-emerald-950 block">
-                Gemma 4 is reading the handwritten notes and equations...
+                Reading handwritten notes and analyzing equations...
               </span>
               <span className="text-emerald-700 text-xs">
-                Generating structured academic concepts, bilingual explanations, and practice quiz questions.
+                Generating structured academic concepts, key definitions, and practice quiz questions.
               </span>
             </div>
           </div>

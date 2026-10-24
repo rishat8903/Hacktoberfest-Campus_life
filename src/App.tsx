@@ -94,10 +94,10 @@ export default function App() {
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
           <div>
             <p className="font-bold text-slate-200">
-              IIUC CampusMate — Intelligent Open-Source AI Campus Life Copilot
+              IIUC CampusMate — Student Academic & Campus Life Portal
             </p>
             <p className="text-[11px] text-slate-500 mt-0.5">
-              Built for Hacktoberfest Hack Day • Powered by Gemma 4 Multimodal, Groq & ElevenLabs Multilingual V2
+              Built for International Islamic University Chittagong • Kumira Campus
             </p>
           </div>
 
