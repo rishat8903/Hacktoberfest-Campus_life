@@ -55,11 +55,11 @@ export const Navigation: React.FC<NavigationProps> = ({
     {
       id: 'wellbeing' as ActiveTab,
       labelBn: 'ক্যাম্পাস কেয়ার ও ট্রায়াজ',
-      labelEn: 'Campus Care & SOS',
-      subBn: 'অসুস্থতা ও স্টাডি ডি-স্ট্রেস',
-      subEn: 'Triage & Grounding',
+      labelEn: 'Care & Mental Health AI',
+      subBn: 'লক্ষণ ট্রায়াজ ও এআই কাউন্সিলর',
+      subEn: 'Triage & Mental Health AI',
       icon: HeartPulse,
-      badge: '24/7 Care',
+      badge: 'Counselor AI',
       badgeColor: 'bg-rose-100 text-rose-800 border-rose-200',
     },
   ];

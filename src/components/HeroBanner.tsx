@@ -148,10 +148,10 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
               <HeartPulse className="w-5 h-5" />
             </div>
             <div className="font-bold text-xs sm:text-sm text-white">
-              {isBn ? 'ক্যাম্পাস কেয়ার ও SOS' : 'Campus Care & SOS'}
+              {isBn ? 'স্বাস্থ্য ট্রায়াজ ও মেন্টাল এআই' : 'Health Triage & Mental AI'}
             </div>
             <div className="text-[10px] text-slate-400 mt-0.5">
-              {isBn ? '৪-ধাপ ট্রায়াজ ও হল হেল্প' : '4-Tier Health Triage'}
+              {isBn ? 'লক্ষণ বিশ্লেষণ ও মন-সাথী' : 'Symptom AI & MindCompanion'}
             </div>
           </button>
         </div>

@@ -307,6 +307,365 @@ Extract and structure all essential details into valid JSON:
   }
 });
 
+/**
+ * POST /api/campus-care/triage
+ * Real-time Clinical Symptom Analysis from free-text user descriptions.
+ */
+app.post('/api/campus-care/triage', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { userSymptomsText, feverTemp, durationDays, category } = req.body;
+
+    if (!userSymptomsText || typeof userSymptomsText !== 'string') {
+      res.status(400).json({ error: 'Symptoms description is required.' });
+      return;
+    }
+
+    const triageSystemPrompt = `You are a licensed clinical triage officer assisting university students living in dormitories and off-campus at International Islamic University Chittagong (IIUC), Kumira.
+Analyze the student's personal symptoms description:
+"${userSymptomsText}"
+Additional vitals reported:
+- Fever scale: ${feverTemp || 98.6}°F
+- Duration: ${durationDays || 1} day(s)
+- Category hint: ${category || 'general'}
+
+Provide a 4-Tier Clinical Triage decision:
+Tier 1: 'hall_rest' (Mild condition, dormitory self-care, hydration, rest, OTC paracetamol)
+Tier 2: 'campus_medical' (Moderate condition, persistent infection/fever, needs IIUC Kumira Medical Center evaluation)
+Tier 3: 'city_hospital' (High severity, suspected severe dengue, acute dehydration, or needs Chittagong Medical College Hospital - CMCH)
+Tier 4: 'emergency' (Critical red flag: severe chest pain, extreme breathlessness, acute emergency ambulance needed immediately)
+
+Return ONLY valid JSON matching this schema:
+{
+  "tier": "hall_rest" | "campus_medical" | "city_hospital" | "emergency",
+  "urgencyLevel": "low" | "moderate" | "high" | "critical",
+  "titleEn": "Clear actionable medical headline in English",
+  "titleBn": "বাংলায় স্পষ্ট শিরোনাম",
+  "badgeEn": "Tier Badge in English",
+  "badgeBn": "টিয়ার ব্যাজ বাংলায়",
+  "clinicalAssessment": "Concise medical assessment explaining what might be happening physiologically",
+  "recommendationEn": "Clear, practical medical advice in English",
+  "recommendationBn": "সহজ ভাষায় বাংলায় দিকনির্দেশনা",
+  "actionSteps": ["Immediate action 1", "Immediate action 2", "Immediate action 3"],
+  "questionsForDoctor": ["Question to ask attending doctor 1", "Question 2"],
+  "campusFacility": "Recommended facility (e.g. IIUC Medical Center / CMCH / Dorm Room Rest)",
+  "campusFacilityHours": "e.g. 08:30 AM - 04:30 PM or 24/7",
+  "redFlagWarning": "Any danger signs to watch out for, or null if none"
+}`;
+
+    // 1. Try Groq if configured
+    const groqKey = (req.headers['x-groq-key'] as string) || process.env.GROQ_API_KEY;
+    if (groqKey) {
+      try {
+        const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${groqKey}`,
+          },
+          body: JSON.stringify({
+            model: 'llama-3.3-70b-versatile',
+            messages: [
+              { role: 'system', content: triageSystemPrompt },
+              { role: 'user', content: 'Analyze the patient symptoms and return JSON.' },
+            ],
+            response_format: { type: 'json_object' },
+            temperature: 0.2,
+          }),
+        });
+
+        if (groqRes.ok) {
+          const gData = await groqRes.json();
+          const parsed = JSON.parse(gData.choices?.[0]?.message?.content || '{}');
+          res.json({ success: true, model: 'groq/llama-3.3-70b', data: parsed });
+          return;
+        }
+      } catch (gErr) {
+        console.warn('Groq triage error:', gErr);
+      }
+    }
+
+    // 2. Try Google Gen AI (gemini-3.1-flash-lite)
+    try {
+      const gResponse = await ai.models.generateContent({
+        model: 'gemini-3.1-flash-lite',
+        contents: {
+          parts: [{ text: triageSystemPrompt }],
+        },
+        config: {
+          responseMimeType: 'application/json',
+          temperature: 0.2,
+        },
+      });
+
+      const raw = gResponse.text || '';
+      const parsed = JSON.parse(raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, ''));
+      res.json({ success: true, model: 'gemini-3.1-flash-lite', data: parsed });
+      return;
+    } catch (gaiErr) {
+      console.warn('Gemini triage error:', (gaiErr as Error)?.message);
+    }
+
+    // 3. Fallback deterministic clinical triage if models are unavailable
+    const textLower = userSymptomsText.toLowerCase();
+    const isCritical =
+      textLower.includes('chest') ||
+      textLower.includes('breath') ||
+      textLower.includes('unconscious') ||
+      (feverTemp && feverTemp >= 104);
+    const isModerate =
+      textLower.includes('vomit') ||
+      textLower.includes('stomach') ||
+      textLower.includes('diarrhea') ||
+      textLower.includes('dengue') ||
+      (feverTemp && feverTemp >= 102) ||
+      (durationDays && durationDays >= 3);
+
+    const fallbackTriage = isCritical
+      ? {
+          tier: 'emergency',
+          urgencyLevel: 'critical',
+          titleEn: 'Critical Emergency: Immediate Hospital Assessment Needed',
+          titleBn: 'জরুরি সতর্কতা: অবিলম্বে মেডিকেল সহায়তা প্রয়োজন',
+          badgeEn: 'Tier 4: Immediate Hospital Emergency',
+          badgeBn: 'টিয়ার ৪: জরুরি অ্যাম্বুলেন্স / হাসপাতাল',
+          clinicalAssessment:
+            'Reported symptoms indicate possible acute cardiovascular, respiratory distress, or severe hyperpyrexia.',
+          recommendationEn:
+            'Do not remain isolated in dormitory rooms. Call IIUC campus transport or 999 for ambulance dispatch to CMCH.',
+          recommendationBn:
+            'হলে একা বসে থাকা যাবে না। অবিলম্বে ক্যাম্পাস অ্যাম্বুলেন্স অথবা ৯৯৯-এ যোগাযোগ করে হাসপাতালে যান।',
+          actionSteps: [
+            'Alert hall provost and roommates immediately',
+            'Avoid physical exertion or walking unassisted',
+            'Keep emergency contacts ready',
+          ],
+          questionsForDoctor: ['Need immediate ECG & vitals monitoring?', 'Is emergency IV stabilization required?'],
+          campusFacility: 'Campus Ambulance & CMCH Emergency Room',
+          campusFacilityHours: '24/7 Hours Available',
+          redFlagWarning: 'Do not sleep without informing your roommate.',
+        }
+      : isModerate
+      ? {
+          tier: 'campus_medical',
+          urgencyLevel: 'moderate',
+          titleEn: 'Visit IIUC Kumira Campus Medical Center',
+          titleBn: 'কুমিরা ক্যাম্পাস মেডিকেল সেন্টারে ডাক্তার দেখান',
+          badgeEn: 'Tier 2: Campus Medical Center',
+          badgeBn: 'টিয়ার ২: ক্যাম্পাস মেডিকেল সেন্টার',
+          clinicalAssessment:
+            'Symptoms suggest acute gastroenteritis, viral syndrome, or persistent bacterial infection.',
+          recommendationEn:
+            'Maintain strict oral rehydration (ORS saline), avoid cafeteria fried foods, and consult the duty medical officer.',
+          recommendationBn:
+            'ওআরএস স্যালাইন পান করুন, ডাইনিংয়ের তেলযুক্ত খাবার পরিহার করুন এবং ক্যাম্পাস মেডিকেলে যান।',
+          actionSteps: [
+            'Drink 250ml ORS after every loose stool or vomiting spell',
+            'Take paracetamol 500mg if temperature exceeds 101°F',
+            'Visit Kumira medical center for doctor evaluation',
+          ],
+          questionsForDoctor: ['Should CBC / platelet count test be done?', 'Is oral rehydration enough or IV needed?'],
+          campusFacility: 'IIUC Kumira Medical Center (Near Central Library)',
+          campusFacilityHours: '08:30 AM - 04:30 PM (Emergency Room till 09:00 PM)',
+          redFlagWarning: 'Watch for severe abdominal pain or bleeding.',
+        }
+      : {
+          tier: 'hall_rest',
+          urgencyLevel: 'low',
+          titleEn: 'Dormitory Self-Care & Hydration Monitoring',
+          titleBn: 'হলে বিশ্রাম ও প্রাথমিক শুশ্রূষা',
+          badgeEn: 'Tier 1: Hall Rest & Monitoring',
+          badgeBn: 'টিয়ার ১: হলে বিশ্রাম ও সেলফ-কেয়ার',
+          clinicalAssessment:
+            'Symptoms are consistent with mild exhaustion, seasonal viral cold, or tension-related headache.',
+          recommendationEn:
+            'Get 8 hours of restorative sleep, drink warm fluids with lemon/electrolytes, and monitor symptoms for 48 hours.',
+          recommendationBn:
+            'পর্যাপ্ত বিশ্রাম নিন, কুসুম গরম পানি ও লেবুর শরবত খান এবং আগামী ৪৮ ঘণ্টা লক্ষণ পর্যবেক্ষণ করুন।',
+          actionSteps: [
+            'Drink plenty of clean water and warm fluids',
+            'Take adequate sleep in a well-ventilated room',
+            'If fever rises above 102°F, proceed to campus medical',
+          ],
+          questionsForDoctor: ['Safe OTC relief dosage', 'When to seek in-person review'],
+          campusFacility: 'Dorm First-Aid Kit / Hall Assistant Provost',
+          campusFacilityHours: 'Available in Hall',
+          redFlagWarning: null,
+        };
+
+    res.json({ success: true, model: 'clinical-rules-fallback', data: fallbackTriage });
+  } catch (err: unknown) {
+    console.error('Triage error:', err);
+    res.status(500).json({ error: 'Server error analyzing symptoms.' });
+  }
+});
+
+/**
+ * POST /api/campus-care/mental-health-chat
+ * CampusCare Mental Health AI (MindCompanion / মন-সাথী)
+ * Empathetic, supportive conversational assistant for university students.
+ */
+app.post('/api/campus-care/mental-health-chat', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { message, history } = req.body;
+
+    if (!message || typeof message !== 'string') {
+      res.status(400).json({ error: 'Message is required.' });
+      return;
+    }
+
+    const counselorSystemPrompt = `You are "CampusCare MindCompanion" (মন-সাথী), an empathetic, compassionate, and psychologically trained mental health support companion for university students at International Islamic University Chittagong (IIUC).
+You speak in a warm, gentle, non-judgmental, encouraging tone (in English or student's language).
+Your goals:
+1. Provide active listening and emotional validation. Validate that university life, exams, grades, CGPA, hall living, and homesickness can be genuinely stressful.
+2. Teach evidence-based psychological grounding techniques (e.g. 5-4-3-2-1 sensory grounding, cognitive reframing, realistic study pacing, self-compassion).
+3. De-escalate panic and imposter syndrome without giving robotic platitudes.
+4. If the student expresses feelings of severe crisis or self-harm, gently provide the national hotline 999 and university counseling contact with warmth.
+5. Keep your responses concise (2 to 3 short, warm paragraphs), conversational, and formatted nicely with clean bullet points when suggesting actionable steps.`;
+
+    // 1. Try Groq (ultra-fast conversation)
+    const groqKey = (req.headers['x-groq-key'] as string) || process.env.GROQ_API_KEY;
+    if (groqKey) {
+      try {
+        const groqMessages = [
+          { role: 'system', content: counselorSystemPrompt },
+          ...(Array.isArray(history)
+            ? history.slice(-6).map((h: { sender: string; text: string }) => ({
+                role: h.sender === 'user' ? 'user' : 'assistant',
+                content: h.text,
+              }))
+            : []),
+          { role: 'user', content: message },
+        ];
+
+        const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${groqKey}`,
+          },
+          body: JSON.stringify({
+            model: 'llama-3.3-70b-versatile',
+            messages: groqMessages,
+            temperature: 0.6,
+            max_tokens: 500,
+          }),
+        });
+
+        if (groqRes.ok) {
+          const gData = await groqRes.json();
+          const reply = gData.choices?.[0]?.message?.content;
+          if (reply) {
+            res.json({ success: true, reply, model: 'groq/llama-3.3-70b' });
+            return;
+          }
+        }
+      } catch (gErr) {
+        console.warn('Groq chat error:', gErr);
+      }
+    }
+
+    // 2. Try Google Gen AI (gemini-3.1-flash-lite)
+    try {
+      const gResponse = await ai.models.generateContent({
+        model: 'gemini-3.1-flash-lite',
+        contents: {
+          parts: [{ text: `${counselorSystemPrompt}\n\nStudent says: "${message}"\n\nProvide your supportive response:` }],
+        },
+        config: {
+          temperature: 0.6,
+        },
+      });
+
+      const reply = gResponse.text || '';
+      if (reply) {
+        res.json({ success: true, reply, model: 'gemini-3.1-flash-lite' });
+        return;
+      }
+    } catch (gaiErr) {
+      console.warn('Gemini mental health error:', (gaiErr as Error)?.message);
+    }
+
+    // 3. Fallback empathetic counseling response
+    const fallbackReply = `I hear you, and I want you to take a gentle breath right now. University pressure, deadlines, and living away from home can feel truly heavy, but you are not alone in feeling this way.
+
+Here are three small grounding steps you can do right now:
+• Unclench your jaw and drop your shoulders away from your ears.
+• Drink a glass of cold water slowly, noticing the temperature.
+• Remind yourself: You don't have to solve everything today—just focus on the next small step.
+
+Whenever you want to talk or vent about what is on your mind, I am right here listening. What is feeling hardest right now?`;
+
+    res.json({ success: true, reply: fallbackReply, model: 'mindcompanion-counselor' });
+  } catch (err: unknown) {
+    console.error('Mental health chat error:', err);
+    res.status(500).json({ error: 'Server error in mental health companion.' });
+  }
+});
+
+/**
+ * POST /api/elevenlabs/tts
+ * Natural Multilingual AI Voice Synthesis Proxy (Alice, George, Lily, Brian)
+ */
+app.post('/api/elevenlabs/tts', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { text, voiceId } = req.body;
+    const apiKey = (req.headers['x-elevenlabs-key'] as string) || process.env.ELEVENLABS_API_KEY;
+
+    if (!apiKey) {
+      res.status(401).json({ error: 'ElevenLabs API key is not configured.' });
+      return;
+    }
+
+    if (!text || typeof text !== 'string') {
+      res.status(400).json({ error: 'Text is required for TTS.' });
+      return;
+    }
+
+    // Clean markdown characters and asterisks so the speech sounds natural
+    const cleanText = text
+      .replace(/[*#_`~]/g, '')
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+      .trim()
+      .slice(0, 1000);
+
+    const targetVoiceId = voiceId || process.env.ELEVENLABS_VOICE_ID || 'Xb7hH8MSUJpSbSDYk0k2';
+
+    const elevenRes = await fetch(
+      `https://api.elevenlabs.io/v1/text-to-speech/${targetVoiceId}?output_format=mp3_44100_128`,
+      {
+        method: 'POST',
+        headers: {
+          'xi-api-key': apiKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: cleanText,
+          model_id: 'eleven_multilingual_v2',
+          voice_settings: {
+            stability: 0.5,
+            similarity_boost: 0.75,
+          },
+        }),
+      }
+    );
+
+    if (!elevenRes.ok) {
+      const errText = await elevenRes.text();
+      console.warn(`ElevenLabs error (${elevenRes.status}):`, errText);
+      res.status(elevenRes.status).json({ error: 'ElevenLabs API error', details: errText });
+      return;
+    }
+
+    const audioBuffer = await elevenRes.arrayBuffer();
+    res.setHeader('Content-Type', 'audio/mpeg');
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.send(Buffer.from(audioBuffer));
+  } catch (err: unknown) {
+    console.error('TTS proxy error:', err);
+    res.status(500).json({ error: 'Failed to synthesize audio.' });
+  }
+});
+
 async function startServer() {
   const isProd = process.env.NODE_ENV === 'production';
 

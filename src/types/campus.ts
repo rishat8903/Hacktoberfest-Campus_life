@@ -39,7 +39,7 @@ export interface StudyNoteResult {
   keyConcepts: string[];
   quiz: QuizQuestion[];
   imageUrl?: string;
-  createdAt: string;
+  createdAt?: string;
 }
 
 // --- Bus Navigator Types ---
@@ -107,10 +107,20 @@ export interface HealthTriageResult {
   badgeBn: string;
   badgeEn: string;
   urgencyLevel: 'low' | 'moderate' | 'high' | 'critical';
+  clinicalAssessment?: string;
   recommendationBn: string;
   recommendationEn: string;
+  actionSteps?: string[];
   campusFacility: string;
   campusFacilityHours: string;
   questionsForDoctor: string[];
-  redFlagWarning?: string;
+  redFlagWarning?: string | null;
 }
+
+export interface MentalHealthMessage {
+  id: string;
+  sender: 'user' | 'assistant';
+  text: string;
+  timestamp: string;
+}
+
