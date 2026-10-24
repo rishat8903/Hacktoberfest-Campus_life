@@ -5,28 +5,23 @@ import {
   Stethoscope,
   Smile,
   Activity,
-  AlertOctagon,
   Sparkles,
-  PhoneCall,
   Volume2,
   CheckCircle2,
   AlertTriangle,
-  Building,
-  HelpCircle,
-  Square,
-  Sliders,
   Send,
   User,
   Bot,
-  MessageSquare,
   Mic,
   MicOff,
   RefreshCw,
   Copy,
   Check,
-  ChevronRight,
-  PhoneForwarded,
-  ArrowRight,
+  PhoneCall,
+  PhoneOff,
+  Radio,
+  Sliders,
+  VolumeX,
 } from 'lucide-react';
 import { Language, HealthTriageResult, VoiceConfig, MentalHealthMessage } from '../../types/campus';
 import { playVoiceSpeech, stopVoiceAudio, getStoredVoiceConfig } from '../../utils/audioService';
@@ -77,7 +72,7 @@ const INITIAL_MESSAGES: MentalHealthMessage[] = [
   {
     id: 'm1',
     sender: 'assistant',
-    text: `Hello there. I am **CampusCare MindCompanion** (মন-সাথী), your confidential university mental health counseling assistant.\n\nWhether you are dealing with intense exam anxiety, CGPA stress, loneliness in the dorms, or feeling completely burned out, I am here to listen without judgment.\n\nTake a slow breath. What is on your mind today?`,
+    text: `Hello there. I am **MindCompanion** (মন-সাথী), your confidential university mental health counseling companion.\n\nWhether you are dealing with intense exam anxiety, CGPA stress, loneliness in the hall, or feeling completely burned out, I am here to listen without judgment.\n\nYou can type to me, speak via voice, or tap **"Start Voice Conversation"** above to talk with me hands-free. Take a slow breath. What is on your mind today?`,
     timestamp: 'Just now',
   },
 ];
@@ -91,7 +86,7 @@ export const WellbeingTab: React.FC<WellbeingTabProps> = ({
   const isBn = language === 'bn';
 
   // Sub-Navigation: Triage vs Mental Health Counselor
-  const [activeSubTab, setActiveSubTab] = useState<'triage' | 'mental_health'>('triage');
+  const [activeSubTab, setActiveSubTab] = useState<'triage' | 'mental_health'>('mental_health');
 
   // --- Clinical Triage State ---
   const [symptomsInput, setSymptomsInput] = useState<string>(
@@ -127,20 +122,240 @@ export const WellbeingTab: React.FC<WellbeingTabProps> = ({
     redFlagWarning: 'If vomiting prevents you from keeping any water down for 6 hours, seek immediate emergency IV care.',
   });
 
-  // --- Mental Health AI Chat State ---
+  // --- Mental Health Chat State ---
   const [chatMessages, setChatMessages] = useState<MentalHealthMessage[]>(INITIAL_MESSAGES);
   const [inputMessage, setInputMessage] = useState<string>('');
   const [isAiReplying, setIsAiReplying] = useState<boolean>(false);
   const [isPlayingAudio, setIsPlayingAudio] = useState<boolean>(false);
+  const [autoSpeakReplies, setAutoSpeakReplies] = useState<boolean>(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
+  // --- Voice Speech Recognition & Voice Call Mode ---
+  const [isListeningSymptoms, setIsListeningSymptoms] = useState<boolean>(false);
+  const [isListeningChat, setIsListeningChat] = useState<boolean>(false);
+  const [isVoiceCallActive, setIsVoiceCallActive] = useState<boolean>(false);
+  const [callStatus, setCallStatus] = useState<'listening' | 'thinking' | 'speaking' | 'idle'>('idle');
+
   const chatBottomRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
     if (activeSubTab === 'mental_health') {
       chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [chatMessages, activeSubTab]);
+
+  // Clean up speech recognition & audio on unmount
+  useEffect(() => {
+    return () => {
+      recognitionRef.current?.stop();
+      stopVoiceAudio();
+    };
+  }, []);
+
+  // Speech Recognition Initializer
+  const startRecognition = (
+    onTranscript: (text: string) => void,
+    onFinal: (text: string) => void,
+    onError?: () => void
+  ) => {
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert(
+        isBn
+          ? 'আপনার ব্রাউজারে ভয়েস রিকগনিশন সাপোর্ট নেই। অনুগ্রহ করে Chrome বা Edge ব্যবহার করুন।'
+          : 'Voice speech recognition is not supported in this browser. Please use Chrome, Edge, or Safari.'
+      );
+      onError?.();
+      return null;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.lang = language === 'bn' ? 'bn-BD' : 'en-US';
+
+      let finalCollected = '';
+
+      recognition.onresult = (event: any) => {
+        let interim = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalCollected += event.results[i][0].transcript;
+          } else {
+            interim += event.results[i][0].transcript;
+          }
+        }
+        onTranscript(finalCollected || interim);
+      };
+
+      recognition.onend = () => {
+        if (finalCollected.trim()) {
+          onFinal(finalCollected.trim());
+        } else {
+          onError?.();
+        }
+      };
+
+      recognition.onerror = (e: any) => {
+        console.warn('Speech recognition error:', e);
+        onError?.();
+      };
+
+      recognition.start();
+      return recognition;
+    } catch (err) {
+      console.warn('Recognition start exception:', err);
+      onError?.();
+      return null;
+    }
+  };
+
+  // 1. Voice input for physical symptoms
+  const handleVoiceSymptoms = () => {
+    if (isListeningSymptoms) {
+      recognitionRef.current?.stop();
+      setIsListeningSymptoms(false);
+      return;
+    }
+
+    setIsListeningSymptoms(true);
+    recognitionRef.current = startRecognition(
+      (text) => setSymptomsInput(text),
+      (finalText) => {
+        setSymptomsInput(finalText);
+        setIsListeningSymptoms(false);
+      },
+      () => setIsListeningSymptoms(false)
+    );
+  };
+
+  // 2. Voice input for mental health chat
+  const handleVoiceChat = () => {
+    if (isListeningChat) {
+      recognitionRef.current?.stop();
+      setIsListeningChat(false);
+      return;
+    }
+
+    setIsListeningChat(true);
+    recognitionRef.current = startRecognition(
+      (text) => setInputMessage(text),
+      (finalText) => {
+        setInputMessage(finalText);
+        setIsListeningChat(false);
+        handleSendMessage(finalText);
+      },
+      () => setIsListeningChat(false)
+    );
+  };
+
+  // 3. Interactive Voice Call Mode with MindCompanion
+  const handleToggleVoiceCall = () => {
+    if (isVoiceCallActive) {
+      setIsVoiceCallActive(false);
+      setCallStatus('idle');
+      stopVoiceAudio();
+      recognitionRef.current?.stop();
+    } else {
+      setIsVoiceCallActive(true);
+      setCallStatus('speaking');
+
+      const greeting = isBn
+        ? 'আসসালামু আলাইকুম। আমি আপনার মন-সাথী। আপনার মন খারাপ বা পরীক্ষার যেকোনো চিন্তার কথা আমাকে মন খুলে বলুন, আমি শুনছি।'
+        : 'Hello. I am MindCompanion. Take a gentle breath and tell me what is troubling you. I am listening.';
+
+      playVoiceSpeech({
+        text: greeting,
+        config: voiceConfig || getStoredVoiceConfig(),
+        onStart: () => setCallStatus('speaking'),
+        onEnd: () => {
+          startVoiceCallTurn();
+        },
+        onError: () => {
+          startVoiceCallTurn();
+        },
+      });
+    }
+  };
+
+  const startVoiceCallTurn = () => {
+    setCallStatus('listening');
+    recognitionRef.current = startRecognition(
+      (text) => setInputMessage(text),
+      (finalText) => {
+        setInputMessage(finalText);
+        handleVoiceCallTurn(finalText);
+      },
+      () => {
+        // If silence, remain in listening state
+        setCallStatus('listening');
+      }
+    );
+  };
+
+  const handleVoiceCallTurn = async (spokenText: string) => {
+    if (!spokenText.trim()) {
+      startVoiceCallTurn();
+      return;
+    }
+
+    setCallStatus('thinking');
+    const userMsg: MentalHealthMessage = {
+      id: `u-${Date.now()}`,
+      sender: 'user',
+      text: spokenText,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+
+    setChatMessages((prev) => [...prev, userMsg]);
+    setInputMessage('');
+
+    try {
+      const res = await fetch('/api/campus-care/mental-health-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: spokenText,
+          history: chatMessages.slice(-6).map((m) => ({ sender: m.sender, text: m.text })),
+        }),
+      });
+
+      const json = await res.json();
+      const replyText =
+        json.reply ||
+        'I hear you. Take a slow, grounding breath. You are doing the best you can in a challenging academic environment. Remember that your health comes first.';
+
+      const aiMsg: MentalHealthMessage = {
+        id: `ai-${Date.now()}`,
+        sender: 'assistant',
+        text: replyText,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+
+      setChatMessages((prev) => [...prev, aiMsg]);
+      setCallStatus('speaking');
+
+      // AI speaks response back out loud
+      await playVoiceSpeech({
+        text: replyText,
+        config: voiceConfig || getStoredVoiceConfig(),
+        onStart: () => setCallStatus('speaking'),
+        onEnd: () => {
+          // Automatic voice turn: resume listening for the student's next words
+          startVoiceCallTurn();
+        },
+        onError: () => {
+          startVoiceCallTurn();
+        },
+      });
+    } catch {
+      startVoiceCallTurn();
+    }
+  };
 
   // Handle Clinical Triage Form Submission
   const handleAnalyzeSymptoms = async () => {
@@ -216,6 +431,11 @@ export const WellbeingTab: React.FC<WellbeingTabProps> = ({
       };
 
       setChatMessages((prev) => [...prev, aiMsg]);
+
+      // If auto-speak is enabled, voice the response
+      if (autoSpeakReplies && !isVoiceCallActive) {
+        handlePlayVoice(replyText);
+      }
     } catch {
       const fallbackMsg: MentalHealthMessage = {
         id: `ai-${Date.now()}`,
@@ -229,7 +449,7 @@ export const WellbeingTab: React.FC<WellbeingTabProps> = ({
     }
   };
 
-  // Audio speech player using ElevenLabs with Web Speech fallback
+  // Audio speech player
   const handlePlayVoice = async (textToSpeak: string) => {
     if (isPlayingAudio) {
       stopVoiceAudio();
@@ -274,7 +494,7 @@ export const WellbeingTab: React.FC<WellbeingTabProps> = ({
               Student Health Triage & Mental Health Companion
             </h2>
             <p className="text-xs sm:text-sm text-emerald-100/90 mt-1 max-w-xl">
-              Type your symptoms for hospital & clinic evaluation, or talk with MindCompanion for stress relief and empathetic advice.
+              Type or speak your symptoms for clinic guidance, or talk freely with MindCompanion for stress relief and counseling.
             </p>
           </div>
 
@@ -308,7 +528,7 @@ export const WellbeingTab: React.FC<WellbeingTabProps> = ({
       </div>
 
       {/* ========================================================= */}
-      {/* VIEW 1: Clinical Symptom Text Input & 4-Tier Health Triage */}
+      {/* VIEW 1: Clinical Symptom Text & Voice Input + Triage */}
       {/* ========================================================= */}
       {activeSubTab === 'triage' && (
         <div className="space-y-6">
@@ -318,10 +538,10 @@ export const WellbeingTab: React.FC<WellbeingTabProps> = ({
               <div>
                 <h3 className="text-base sm:text-lg font-black text-slate-900 font-display flex items-center gap-2">
                   <Stethoscope className="w-5 h-5 text-rose-600" />
-                  <span>Tell Us How You Are Feeling (Patient Symptom Input)</span>
+                  <span>Tell Us How You Are Feeling (Voice or Text Input)</span>
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Type your physical symptoms freely in your own words. Our clinical AI evaluates urgency and hospital requirements.
+                  Type or speak your symptoms freely. Our clinical evaluator determines campus clinic vs emergency requirements.
                 </p>
               </div>
 
@@ -354,11 +574,38 @@ export const WellbeingTab: React.FC<WellbeingTabProps> = ({
               </div>
             </div>
 
-            {/* Free-Text User Symptom Input Textarea */}
+            {/* Free-Text & Voice User Symptom Input Textarea */}
             <div>
-              <label className="font-bold text-slate-800 text-xs sm:text-sm block mb-1.5">
-                Describe Your Symptoms & Context in Detail:
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="font-bold text-slate-800 text-xs sm:text-sm">
+                  Describe Your Symptoms & Context in Detail:
+                </label>
+
+                {/* Speak Symptoms Button */}
+                <button
+                  type="button"
+                  onClick={handleVoiceSymptoms}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold border transition cursor-pointer ${
+                    isListeningSymptoms
+                      ? 'bg-rose-100 text-rose-700 border-rose-300 animate-pulse'
+                      : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
+                  }`}
+                  title="Speak your symptoms using microphone"
+                >
+                  {isListeningSymptoms ? (
+                    <>
+                      <MicOff className="w-3.5 h-3.5 text-rose-600 animate-bounce" />
+                      <span>Listening... (Tap to finish)</span>
+                    </>
+                  ) : (
+                    <>
+                      <Mic className="w-3.5 h-3.5 text-rose-600" />
+                      <span>Speak Symptoms (Voice Input)</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
               <textarea
                 rows={3}
                 value={symptomsInput}
@@ -464,7 +711,7 @@ export const WellbeingTab: React.FC<WellbeingTabProps> = ({
                   </h3>
                 </div>
 
-                {/* ElevenLabs Audio Playback Button */}
+                {/* Audio Playback Button */}
                 <button
                   onClick={() =>
                     handlePlayVoice(
@@ -473,17 +720,15 @@ export const WellbeingTab: React.FC<WellbeingTabProps> = ({
                   }
                   className="flex items-center gap-2 px-3.5 py-2 bg-white/80 hover:bg-white text-slate-800 rounded-xl text-xs font-bold border border-slate-300/80 shadow-xs transition cursor-pointer self-start sm:self-auto shrink-0"
                 >
-                  <Volume2 className={`w-4 h-4 ${isPlayingAudio ? 'animate-bounce text-purple-600' : 'text-purple-700'}`} />
-                  <span>{isPlayingAudio ? 'Speaking...' : `Listen (${activeVoiceName})`}</span>
+                  <Volume2 className={`w-4 h-4 ${isPlayingAudio ? 'animate-bounce text-emerald-600' : 'text-emerald-700'}`} />
+                  <span>{isPlayingAudio ? 'Speaking...' : `Listen Advice`}</span>
                 </button>
               </div>
 
               {/* Clinical Assessment */}
               {triageResult.clinicalAssessment && (
                 <div className="p-4 bg-white/70 rounded-2xl border border-black/5 text-xs sm:text-sm leading-relaxed">
-                  <span className="font-bold block mb-1 text-slate-900">
-                    Clinical Evaluation:
-                  </span>
+                  <span className="font-bold block mb-1 text-slate-900">Clinical Evaluation:</span>
                   <span>{triageResult.clinicalAssessment}</span>
                 </div>
               )}
@@ -524,16 +769,16 @@ export const WellbeingTab: React.FC<WellbeingTabProps> = ({
       )}
 
       {/* ========================================================= */}
-      {/* VIEW 2: Conversational Mental Healthcare AI (MindCompanion) */}
+      {/* VIEW 2: Conversational Mental Health Companion (Voice & Text) */}
       {/* ========================================================= */}
       {activeSubTab === 'mental_health' && (
-        <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden flex flex-col h-[650px]">
+        <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden flex flex-col h-[670px]">
           {/* Counselor Chat Header */}
-          <div className="bg-gradient-to-r from-purple-800 via-indigo-900 to-slate-900 text-white p-4 sm:p-5 flex items-center justify-between">
+          <div className="bg-gradient-to-r from-emerald-950 via-teal-950 to-slate-900 text-white p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="relative">
-                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-500 to-indigo-500 flex items-center justify-center text-white shadow-sm">
-                  <Smile className="w-5 h-5 text-purple-100" />
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-600 flex items-center justify-center text-white shadow-sm">
+                  <Smile className="w-5 h-5 text-white" />
                 </div>
                 <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-400 border-2 border-slate-900"></span>
               </div>
@@ -541,32 +786,109 @@ export const WellbeingTab: React.FC<WellbeingTabProps> = ({
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="font-extrabold text-sm sm:text-base font-display">
-                    MindCompanion AI (মন-সাথী)
+                    MindCompanion (মন-সাথী)
                   </h3>
-                  <span className="text-[10px] bg-purple-500/30 text-purple-200 border border-purple-400/30 px-2 py-0.5 rounded-full font-semibold">
-                    Confidential Support
+                  <span className="text-[10px] bg-emerald-500/30 text-emerald-200 border border-emerald-400/30 px-2 py-0.5 rounded-full font-semibold">
+                    Confidential
                   </span>
                 </div>
-                <p className="text-[11px] text-purple-200 mt-0.5">
-                  Trained in psychological first-aid & active listening for university students
+                <p className="text-[11px] text-emerald-200 mt-0.5">
+                  Empathetic counseling, exam anxiety de-escalation & emotional guidance
                 </p>
               </div>
             </div>
 
+            {/* Interactive Voice Call & Controls */}
             <div className="flex items-center gap-2">
+              {/* Primary: Start Hands-Free Voice Conversation Button */}
+              <button
+                onClick={handleToggleVoiceCall}
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition shadow-sm cursor-pointer active:scale-95 ${
+                  isVoiceCallActive
+                    ? 'bg-rose-600 hover:bg-rose-700 text-white animate-pulse'
+                    : 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                }`}
+                title={isVoiceCallActive ? 'End voice call' : 'Start interactive voice conversation'}
+              >
+                {isVoiceCallActive ? (
+                  <>
+                    <PhoneOff className="w-4 h-4" />
+                    <span>End Voice Call</span>
+                  </>
+                ) : (
+                  <>
+                    <PhoneCall className="w-4 h-4" />
+                    <span>Start Voice Call (Talk AI)</span>
+                  </>
+                )}
+              </button>
+
+              {/* Voice narration settings trigger */}
               {onOpenVoiceModal && (
                 <button
                   onClick={onOpenVoiceModal}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold border border-white/20 transition cursor-pointer"
-                  title="Configure Counselor Voice"
+                  className="flex items-center gap-1.5 px-3 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold border border-white/20 transition cursor-pointer"
+                  title="Configure Speaker Voice"
                 >
-                  <Volume2 className="w-3.5 h-3.5 text-purple-300" />
+                  <Volume2 className="w-3.5 h-3.5 text-emerald-300" />
                   <span className="hidden sm:inline">Voice:</span>
                   <span>{activeVoiceName}</span>
                 </button>
               )}
             </div>
           </div>
+
+          {/* Interactive Voice Call Live Banner (When Active) */}
+          {isVoiceCallActive && (
+            <div className="bg-gradient-to-r from-emerald-900 to-teal-900 text-white px-5 py-3.5 border-b border-emerald-700 flex items-center justify-between animate-in fade-in duration-200">
+              <div className="flex items-center gap-3">
+                <div className="relative flex items-center justify-center">
+                  <span
+                    className={`w-3.5 h-3.5 rounded-full ${
+                      callStatus === 'listening'
+                        ? 'bg-emerald-400 animate-ping'
+                        : callStatus === 'speaking'
+                        ? 'bg-purple-400 animate-pulse'
+                        : 'bg-amber-400'
+                    }`}
+                  ></span>
+                </div>
+
+                <div>
+                  <div className="text-xs font-bold flex items-center gap-2">
+                    {callStatus === 'listening' && (
+                      <span className="text-emerald-300 flex items-center gap-1.5">
+                        <Mic className="w-3.5 h-3.5 animate-bounce" />
+                        <span>I am listening... Speak naturally about your feelings</span>
+                      </span>
+                    )}
+                    {callStatus === 'thinking' && (
+                      <span className="text-amber-300 flex items-center gap-1.5">
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        <span>MindCompanion is reflecting on your words...</span>
+                      </span>
+                    )}
+                    {callStatus === 'speaking' && (
+                      <span className="text-teal-200 flex items-center gap-1.5">
+                        <Volume2 className="w-3.5 h-3.5 animate-pulse" />
+                        <span>MindCompanion is speaking... ({activeVoiceName})</span>
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-[11px] text-emerald-200 mt-0.5">
+                    Hands-free voice conversation active • Speak whenever it is your turn
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={handleToggleVoiceCall}
+                className="px-3 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-xs font-semibold text-white border border-white/20 cursor-pointer"
+              >
+                Close Call Mode
+              </button>
+            </div>
+          )}
 
           {/* Quick Prompt Starters */}
           <div className="bg-slate-50 border-b border-slate-200 px-4 py-2.5 flex items-center gap-2 overflow-x-auto scrollbar-none">
@@ -582,8 +904,8 @@ export const WellbeingTab: React.FC<WellbeingTabProps> = ({
               <button
                 key={idx}
                 onClick={() => handleSendMessage(p)}
-                disabled={isAiReplying}
-                className="px-2.5 py-1 bg-white hover:bg-purple-50 text-slate-700 hover:text-purple-900 border border-slate-200 rounded-lg text-xs whitespace-nowrap transition cursor-pointer active:scale-95 shrink-0"
+                disabled={isAiReplying || isVoiceCallActive}
+                className="px-2.5 py-1 bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-900 border border-slate-200 rounded-lg text-xs whitespace-nowrap transition cursor-pointer active:scale-95 shrink-0"
               >
                 {p}
               </button>
@@ -591,7 +913,7 @@ export const WellbeingTab: React.FC<WellbeingTabProps> = ({
           </div>
 
           {/* Chat Message Scroll Area */}
-          <div className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-4 bg-slate-50/40">
+          <div className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-4 bg-slate-50/50">
             {chatMessages.map((msg) => {
               const isUser = msg.sender === 'user';
 
@@ -605,7 +927,7 @@ export const WellbeingTab: React.FC<WellbeingTabProps> = ({
                     className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
                       isUser
                         ? 'bg-slate-800 text-white'
-                        : 'bg-purple-600 text-white shadow-xs'
+                        : 'bg-emerald-700 text-white shadow-xs'
                     }`}
                   >
                     {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
@@ -633,7 +955,7 @@ export const WellbeingTab: React.FC<WellbeingTabProps> = ({
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => handlePlayVoice(msg.text)}
-                            className="flex items-center gap-1 text-purple-700 hover:text-purple-900 font-bold transition cursor-pointer"
+                            className="flex items-center gap-1 text-emerald-700 hover:text-emerald-900 font-bold transition cursor-pointer"
                             title="Listen to this advice"
                           >
                             <Volume2 className="w-3.5 h-3.5" />
@@ -662,16 +984,16 @@ export const WellbeingTab: React.FC<WellbeingTabProps> = ({
             {/* AI Typing Indicator */}
             {isAiReplying && (
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-xl bg-purple-600 text-white flex items-center justify-center shrink-0">
+                <div className="w-8 h-8 rounded-xl bg-emerald-700 text-white flex items-center justify-center shrink-0">
                   <Bot className="w-4 h-4" />
                 </div>
                 <div className="p-3 bg-white border border-slate-200 rounded-2xl rounded-tl-none text-xs text-slate-500 flex items-center gap-2">
                   <span className="flex gap-1">
-                    <span className="w-2 h-2 rounded-full bg-purple-600 animate-bounce"></span>
-                    <span className="w-2 h-2 rounded-full bg-purple-600 animate-bounce" style={{ animationDelay: '0.2s' }}></span>
-                    <span className="w-2 h-2 rounded-full bg-purple-600 animate-bounce" style={{ animationDelay: '0.4s' }}></span>
+                    <span className="w-2 h-2 rounded-full bg-emerald-600 animate-bounce"></span>
+                    <span className="w-2 h-2 rounded-full bg-emerald-600 animate-bounce" style={{ animationDelay: '0.2s' }}></span>
+                    <span className="w-2 h-2 rounded-full bg-emerald-600 animate-bounce" style={{ animationDelay: '0.4s' }}></span>
                   </span>
-                  <span>MindCompanion is writing a thoughtful reply...</span>
+                  <span>MindCompanion is writing a supportive reply...</span>
                 </div>
               </div>
             )}
@@ -679,7 +1001,7 @@ export const WellbeingTab: React.FC<WellbeingTabProps> = ({
             <div ref={chatBottomRef} />
           </div>
 
-          {/* Chat Input Bar */}
+          {/* Chat Input Bar (Text + Voice Speech Recognition) */}
           <div className="p-3 sm:p-4 bg-white border-t border-slate-200">
             <form
               onSubmit={(e) => {
@@ -692,15 +1014,38 @@ export const WellbeingTab: React.FC<WellbeingTabProps> = ({
                 type="text"
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
-                placeholder="Talk about what you are feeling (e.g. anxiety, burnout, feeling down)..."
+                placeholder={
+                  isListeningChat
+                    ? 'Listening to you speak... (say what you feel)'
+                    : 'Talk about what you are feeling (or tap the microphone to speak)...'
+                }
                 disabled={isAiReplying}
-                className="flex-1 px-4 py-3 bg-slate-100 focus:bg-white border border-slate-300 rounded-2xl text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+                className={`flex-1 px-4 py-3 border rounded-2xl text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none transition ${
+                  isListeningChat
+                    ? 'bg-rose-50 border-rose-300 ring-2 ring-rose-400 animate-pulse'
+                    : 'bg-slate-100 focus:bg-white border-slate-300 focus:ring-2 focus:ring-emerald-500'
+                }`}
               />
 
+              {/* Voice Speech-to-Text Input Button */}
+              <button
+                type="button"
+                onClick={handleVoiceChat}
+                className={`p-3 rounded-2xl transition cursor-pointer shadow-xs active:scale-95 ${
+                  isListeningChat
+                    ? 'bg-rose-600 text-white animate-bounce'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300'
+                }`}
+                title={isListeningChat ? 'Stop listening' : 'Speak your message with voice'}
+              >
+                {isListeningChat ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+              </button>
+
+              {/* Send Button */}
               <button
                 type="submit"
                 disabled={isAiReplying || !inputMessage.trim()}
-                className="p-3 bg-purple-600 hover:bg-purple-700 text-white rounded-2xl transition cursor-pointer disabled:opacity-40 shadow-xs active:scale-95"
+                className="p-3 bg-emerald-700 hover:bg-emerald-800 text-white rounded-2xl transition cursor-pointer disabled:opacity-40 shadow-xs active:scale-95"
                 title="Send message"
               >
                 <Send className="w-4 h-4" />
